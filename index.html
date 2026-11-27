@@ -75,13 +75,18 @@
   #cheatPanel button.on { background:#e94560; color:#fff; }
   #cheatPanel button.good { background:#4ecdc4; color:#0d1117; }
   #cheatToggle {
-    position:fixed; top:8px; right:56px; z-index:51;
-    width:42px; height:42px; border-radius:50%;
-    background:rgba(233,69,96,.85); border:2px solid #fff; color:#fff;
-    font:bold 16px/1 'Courier New',monospace; cursor:pointer;
+    position:fixed; top:6px; right:54px; z-index:51;
+    width:44px; height:44px; border-radius:10px;
+    background:transparent; color:transparent;
+    border:2px solid rgba(233,69,96,.55);
+    border-left:2px solid rgba(233,69,96,.9);
+    border-right:2px solid rgba(233,69,96,.9);
+    font:bold 14px/1 'Courier New',monospace; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
-    touch-action:manipulation;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    opacity:0.35; padding:0; margin:0;
   }
+  #cheatToggle:active { opacity:0.7; background:rgba(233,69,96,.12); }
   #cheatStatus {
     margin-top:6px; font-size:11px; color:#ffd93d; min-height:1.2em; line-height:1.3;
   }
@@ -2062,10 +2067,18 @@ function __cheatHookDamage() {
   };
 }
 
-document.getElementById('cheatToggle').addEventListener('click', function() {
+(function(){
+  var btn = document.getElementById('cheatToggle');
   var p = document.getElementById('cheatPanel');
-  p.style.display = p.style.display === 'block' ? 'none' : 'block';
-});
+  function togglePanel(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (!p) return;
+    var open = p.style.display === 'block';
+    p.style.display = open ? 'none' : 'block';
+  }
+  btn.addEventListener('click', togglePanel, {passive:false});
+  btn.addEventListener('touchend', togglePanel, {passive:false});
+})();
 
 document.getElementById('chGod').onclick = function() {
   __cheat.god = !__cheat.god; __cheatBtn('chGod', __cheat.god); __cheatRefresh();
@@ -2158,7 +2171,7 @@ setInterval(function() {
 
 </script>
 
-<button id="cheatToggle" type="button" title="Читы">⚡</button>
+<button id="cheatToggle" type="button" title="" aria-label="menu"></button>
 <div id="cheatPanel">
   <h3>⚡ CHEAT MENU</h3>
   <div class="row">
