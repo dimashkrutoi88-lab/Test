@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>BIL Attack · Score Boost</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    background: #0d1117; color: #eee;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+  }
+  h1 { font-size: 22px; color: #4ecdc4; margin: 0 0 6px; letter-spacing: 1px; }
+  .sub { font-size: 13px; color: #8b949e; margin-bottom: 18px; }
+  .panel {
+    background: #16213e; border: 2px solid #4ecdc4;
+    border-radius: 10px; padding: 20px 22px; max-width: 520px;
+  }
+  label { display: block; font-size: 13px; color: #8b949e; margin-bottom: 4px; }
+  input[type=text], input[type=number] {
+    width: 100%; padding: 11px 12px; margin-bottom: 12px;
+    font-size: 16px; font-family: inherit;
+    background: #0d1117; color: #fff;
+    border: 2px solid #2a2a44; border-radius: 6px;
+  }
+  input:focus { outline: none; border-color: #4ecdc4; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button {
+    width: 100%; padding: 12px; margin: 6px 0;
+    font-size: 15px; font-family: inherit; font-weight: bold;
+    cursor: pointer; border: none; border-radius: 6px;
+    background: #4ecdc4; color: #0d1117;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.secondary { background: #2a2a44; color: #eee; }
+  button.danger { background: #e94560; color: #fff; }
+  #log {
+    margin-top: 14px; max-height: 240px; overflow-y: auto;
+    font-size: 13px; line-height: 1.45;
+    background: #0d1117; border-radius: 6px;
+    padding: 10px 12px; border: 1px solid #2a2a44;
+  }
+  .ok { color: #7CFC00; }
+  .err { color: #ff6b81; }
+  .info { color: #ffd93d; }
+  .hint { font-size: 12px; color: #8b949e; margin-top: 10px; line-height: 1.4; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .presets button {
+    width: auto; padding: 6px 12px; font-size: 12px;
+    background: #2a2a44; color: #eee;
+  }
+  #cap {
+    font-size: 13px; color: #7CFC00; margin: -4px 0 12px;
+    min-height: 1.2em;
+  }
+</style>
+</head>
+<body>
+
+<h1>BIL Attack · Score Boost</h1>
+<p class="sub">Прямая отправка в Supabase · с учётом серверной проверки</p>
+
+<div class="panel">
+  <label>Никнейм</label>
+  <input id="name" type="text" maxlength="20" placeholder="Ваш ник" value="">
+
+  <div class="row">
+    <div>
+      <label>Волна</label>
+      <input id="wave" type="number" min="1" max="80" step="1" value="12">
+    </div>
+    <div>
+      <label>Время (сек)</label>
+      <input id="duration" type="number" min="30" step="1" value="450">
+    </div>
+  </div>
+
+  <label>Счёт <span style="color:#8b949e">(авто — максимум под проверку)</span></label>
+  <input id="score" type="number" min="0" step="1" value="11500">
+  <div id="cap"></div>
+
+  <div class="presets">
+    <button type="button" data-w="5" data-d="150">Волна 5</button>
+    <button type="button" data-w="8" data-d="250">Волна 8</button>
+    <button type="button" data-w="12" data-d="450">Волна 12</button>
+    <button type="button" data-w="15" data-d="600">Волна 15</button>
+    <button type="button" data-w="20" data-d="900">Волна 20</button>
+    <button type="button" data-w="25" data-d="1200">Волна 25</button>
+  </div>
+
+  <label>Сколько раз отправить</label>
+  <input id="count" type="number" min="1" max="20" value="1">
+
+  <button id="onceBtn">Отправить один раз</button>
+  <button id="boostBtn" class="danger">Накрутить</button>
+  <button id="stopBtn" class="secondary" disabled>Стоп</button>
+
+  <div id="log"></div>
+  <p class="hint">
+    Сервер режет: score ≤ duration × (8 + (wave−1)×1.6) × 1.04<br>
+    + лимит «too many submissions». Пауза между отправками ~1.2 с.
+  </p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wydvpmrmsmhjwtwaafxe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v73ueWUwtzxivjLLONlTlA_iKlWfPhy';
+
+let abort = false;
+
+function headers() {
+  const h = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+  if (SUPABASE_KEY.startsWith('eyJ')) h['Authorization'] = 'Bearer ' + SUPABASE_KEY;
+  return h;
+}
+
+function maxScore(wave, duration) {
+  const rate = 8 + Math.max(0, wave - 1) * 1.6;
+  return Math.floor(duration * rate * 1.04);
+}
+
+function updateCap() {
+  const wave = Math.max(1, Math.floor(Number(document.getElementById('wave').value) || 1));
+  const dur = Math.max(1, Number(document.getElementById('duration').value) || 1);
+  const cap = maxScore(wave, dur);
+  document.getElementById('cap').textContent = 'Макс. допустимый счёт ≈ ' + cap;
+  const sc = document.getElementById('score');
+  if (Number(sc.value) > cap || !sc.dataset.touched) {
+    sc.value = cap;
+  }
+}
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = cls || 'info';
+  line.textContent = '[' + new Date().toLocaleTimeString('ru-RU') + '] ' + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function getPayload() {
+  const name = document.getElementById('name').value.trim().replace(/\s+/g, ' ');
+  if (name.length < 2) throw new Error('Имя минимум 2 символа');
+  const wave = Math.floor(Number(document.getElementById('wave').value));
+  const duration = Math.round(Number(document.getElementById('duration').value) * 10) / 10;
+  let score = Math.floor(Number(document.getElementById('score').value));
+  const cap = maxScore(wave, duration);
+  if (score > cap) score = cap;
+  if (!(score >= 0) || !(wave >= 1) || !(duration > 0)) throw new Error('Проверьте числа');
+  return { p_name: name, p_score: score, p_wave: wave, p_duration: duration };
+}
+
+async function submitOnce(payload) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/submit_score', {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    let t = '';
+    try { t = await res.text(); } catch (_) {}
+    let msg = 'HTTP ' + res.status;
+    try {
+      const j = JSON.parse(t);
+      if (j.message) msg += ' · ' + j.message;
+    } catch (_) {
+      if (t) msg += ' · ' + t.slice(0, 120);
+    }
+    throw new Error(msg);
+  }
+  return true;
+}
+
+async function runBoost(times) {
+  abort = false;
+  document.getElementById('boostBtn').disabled = true;
+  document.getElementById('onceBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+
+  let ok = 0, fail = 0;
+  try {
+    const base = getPayload();
+    log('Старт: ' + times + '×  ' + base.p_name + ' / ' + base.p_score + ' / w' + base.p_wave, 'info');
+
+    for (let i = 1; i <= times; i++) {
+      if (abort) { log('Остановлено', 'err'); break; }
+      const payload = {
+        ...base,
+        p_score: Math.max(1, base.p_score - Math.floor(Math.random() * Math.min(80, base.p_score * 0.02))),
+        p_duration: Math.max(30, Math.round((base.p_duration + (Math.random() * 6 - 2)) * 10) / 10)
+      };
+      const cap = maxScore(payload.p_wave, payload.p_duration);
+      if (payload.p_score > cap) payload.p_score = cap;
+
+      try {
+        await submitOnce(payload);
+        ok++;
+        log('#' + i + ' OK  score=' + payload.p_score + ' wave=' + payload.p_wave + ' t=' + payload.p_duration, 'ok');
+      } catch (e) {
+        fail++;
+        log('#' + i + ' FAIL  ' + e.message, 'err');
+        if (String(e.message).includes('too many')) {
+          log('Лимит отправок — жду 8 сек...', 'info');
+          await new Promise(r => setTimeout(r, 8000));
+        }
+      }
+      await new Promise(r => setTimeout(r, 1100 + Math.random() * 400));
+    }
+    log('Готово. Успех: ' + ok + ', ошибки: ' + fail, ok ? 'ok' : 'err');
+  } catch (e) {
+    log(e.message, 'err');
+  }
+
+  document.getElementById('boostBtn').disabled = false;
+  document.getElementById('onceBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+}
+
+document.getElementById('onceBtn').addEventListener('click', async () => {
+  try {
+    const p = getPayload();
+    log('Отправка score=' + p.p_score + ' wave=' + p.p_wave + ' t=' + p.p_duration, 'info');
+    await submitOnce(p);
+    log('Отправлено ✓  ' + p.p_name + ' · ' + p.p_score, 'ok');
+  } catch (e) {
+    log(e.message, 'err');
+  }
+});
+
+document.getElementById('boostBtn').addEventListener('click', () => {
+  const n = Math.min(20, Math.max(1, Math.floor(Number(document.getElementById('count').value) || 1)));
+  runBoost(n);
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => { abort = true; });
+
+document.getElementById('wave').addEventListener('input', updateCap);
+document.getElementById('duration').addEventListener('input', updateCap);
+document.getElementById('score').addEventListener('input', () => {
+  document.getElementById('score').dataset.touched = '1';
+});
+
+document.querySelectorAll('.presets button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('wave').value = btn.dataset.w;
+    document.getElementById('duration').value = btn.dataset.d;
+    delete document.getElementById('score').dataset.touched;
+    updateCap();
+  });
+});
+
+try {
+  const saved = localStorage.getItem('playerName');
+  if (saved) document.getElementById('name').value = saved;
+} catch (e) {}
+
+updateCap();
+</script>
+</body>
+</html>
