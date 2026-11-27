@@ -168,6 +168,40 @@
   <button onclick="restart()">Заново</button>
 </div>
 
+<button id="cheatToggle" type="button" title="" aria-label="menu"></button>
+<div id="cheatPanel">
+  <h3>⚡ CHEAT MENU</h3>
+  <div class="row">
+    <button id="chGod" type="button">God mode</button>
+    <button id="chInfHp" type="button">∞ HP</button>
+  </div>
+  <div class="row">
+    <button id="chInfGuns" type="button">∞ Стволы</button>
+    <button id="chMaxGuns" type="button" class="good">+Ствол</button>
+  </div>
+  <div class="row">
+    <button id="chSpeed" type="button">Скорость x2</button>
+    <button id="chRate" type="button">Огонь x3</button>
+  </div>
+  <div class="row">
+    <button id="chDmg" type="button">Урон x5</button>
+    <button id="chShield" type="button" class="good">Щит 60с</button>
+  </div>
+  <div class="row">
+    <button id="chHeal" type="button" class="good">Full HP</button>
+    <button id="chScore" type="button" class="good">+10k очков</button>
+  </div>
+  <div class="row">
+    <button id="chWave" type="button" class="good">След. волна</button>
+    <button id="chBoss" type="button" class="good">Спавн босс</button>
+  </div>
+  <div class="row">
+    <button id="chKill" type="button">Убить всех</button>
+    <button id="chClearEB" type="button">Очистить пули</button>
+  </div>
+  <div id="cheatStatus">Жми ⚡ · начни игру</div>
+</div>
+
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -2171,39 +2205,6 @@ setInterval(function() {
 
 </script>
 
-<button id="cheatToggle" type="button" title="" aria-label="menu"></button>
-<div id="cheatPanel">
-  <h3>⚡ CHEAT MENU</h3>
-  <div class="row">
-    <button id="chGod" type="button">God mode</button>
-    <button id="chInfHp" type="button">∞ HP</button>
-  </div>
-  <div class="row">
-    <button id="chInfGuns" type="button">∞ Стволы</button>
-    <button id="chMaxGuns" type="button" class="good">+Ствол</button>
-  </div>
-  <div class="row">
-    <button id="chSpeed" type="button">Скорость x2</button>
-    <button id="chRate" type="button">Огонь x3</button>
-  </div>
-  <div class="row">
-    <button id="chDmg" type="button">Урон x5</button>
-    <button id="chShield" type="button" class="good">Щит 60с</button>
-  </div>
-  <div class="row">
-    <button id="chHeal" type="button" class="good">Full HP</button>
-    <button id="chScore" type="button" class="good">+10k очков</button>
-  </div>
-  <div class="row">
-    <button id="chWave" type="button" class="good">След. волна</button>
-    <button id="chBoss" type="button" class="good">Спавн босс</button>
-  </div>
-  <div class="row">
-    <button id="chKill" type="button">Убить всех</button>
-    <button id="chClearEB" type="button">Очистить пули</button>
-  </div>
-  <div id="cheatStatus">Жми ⚡ · начни игру</div>
-</div>
 
 </body>
 </html>
