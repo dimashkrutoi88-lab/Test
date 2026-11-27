@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>The BIL Attack · CHEAT</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; width:100%; background:#0d1117; font-family:'Courier New',monospace; color:#eee; overflow:hidden; touch-action:none; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
+  #ui { position:fixed; top:10px; left:10px; right:60px; display:flex; justify-content:space-between; font-size:clamp(13px,3.5vw,18px); text-shadow:2px 2px 0 #000; pointer-events:none; z-index:5; }
+  #fx { position:fixed; bottom:12px; left:10px; font-size:clamp(11px,3vw,14px); line-height:1.35; text-shadow:1px 1px 0 #000; pointer-events:none; z-index:5; }
+  #levelup { position:fixed; top:34%; left:0; right:0; text-align:center; pointer-events:none; z-index:8; opacity:0; text-shadow:3px 3px 0 #000; }
+  #levelup b { display:block; font-size:clamp(34px,10vw,64px); color:#ffd93d; letter-spacing:4px; }
+  #levelup small { display:block; font-size:clamp(14px,4vw,22px); color:#fff; margin-top:6px; }
+  #levelup.show { animation:lvl 2.6s ease-out forwards; }
+  @keyframes lvl { 0% { opacity:0; transform:scale(.4); } 12% { opacity:1; transform:scale(1.15); } 22% { transform:scale(1); } 78% { opacity:1; } 100% { opacity:0; transform:translateY(-30px); } }
+  #toast { position:fixed; top:22%; left:0; right:0; text-align:center; font-size:clamp(18px,5vw,28px); font-weight:bold; text-shadow:2px 2px 0 #000; pointer-events:none; opacity:0; transition:opacity .25s; z-index:7; }
+  canvas { image-rendering:pixelated; display:block; background:#0d1117; touch-action:none; }
+  #pauseBtn { position:fixed; top:8px; right:8px; width:42px; height:42px; border-radius:50%; background:rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.4); color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; z-index:6; touch-action:manipulation; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; z-index:20; }
+  .panel { background:#16213e; border:2px solid #4ecdc4; border-radius:10px; padding:24px 28px; min-width:240px; text-align:center; text-shadow:none; }
+  .panel h2 { margin-top:0; color:#4ecdc4; font-size:clamp(20px,5vw,26px); }
+  .panel button { display:block; width:100%; background:#4ecdc4; color:#0d1117; border:none; padding:12px; margin:8px 0; font-size:16px; cursor:pointer; font-family:inherit; border-radius:6px; font-weight:bold; touch-action:manipulation; }
+  .panel button.secondary { background:#2a2a44; color:#eee; }
+  .settings-row { display:flex; justify-content:space-between; align-items:center; margin:14px 0; gap:10px; }
+  .volume-control { display:flex; align-items:center; gap:10px; width:170px; }
+  .volume-control input[type=range] { width:130px; accent-color:#4ecdc4; cursor:pointer; }
+  .volume-control span { min-width:38px; text-align:right; font-size:13px; }
+
+  #gameover { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; display:none; text-shadow:2px 2px 0 #000; z-index:10; width:80%; }
+  #gameover h1 { color:#e94560; font-size:clamp(28px,8vw,40px); margin-bottom:10px; }
+  #gameover p { font-size:clamp(16px,4vw,20px); }
+  #gameover button { background:#e94560; color:#fff; border:none; padding:14px 28px; font-size:clamp(16px,4vw,18px); cursor:pointer; font-family:inherit; border-radius:4px; touch-action:manipulation; margin:4px; }
+  #submitStatus { font-size:clamp(13px,3.5vw,16px) !important; min-height:1.4em; color:#ffd93d; }
+  #nameInput { width:100%; box-sizing:border-box; padding:12px; margin:10px 0 4px; font-size:18px; font-family:inherit; text-align:center; border-radius:6px; border:2px solid #4ecdc4; background:#0d1117; color:#fff; -webkit-user-select:text; user-select:text; }
+  #nameError { color:#e94560; font-size:13px; min-height:1.2em; margin:0 0 6px; }
+  #rareRewardOverlay {
+    position:fixed; inset:0; z-index:30; display:none; align-items:center;
+    justify-content:center; pointer-events:auto; cursor:default;
+    background:rgba(0,0,0,.82);
+  }
+  #rareRewardCard { position:relative; display:flex; align-items:center; justify-content:center; max-width:90vw; max-height:86vh; }
+  #rareRewardOverlay img {
+    display:block; max-width:min(82vw,560px); max-height:75vh; object-fit:contain;
+    filter:drop-shadow(0 0 22px #fff) drop-shadow(0 0 48px #ffe66d);
+    animation:rareRewardPop .55s cubic-bezier(.2,.8,.2,1) both;
+  }
+  #rareRewardClose {
+    position:absolute; top:-18px; right:-18px; z-index:2; width:42px; height:42px;
+    border:2px solid #fff; border-radius:50%; background:#e94560; color:#fff;
+    font:bold 27px/1 'Courier New',monospace; cursor:pointer; touch-action:manipulation;
+    box-shadow:0 0 18px #fff, 0 0 30px #ffe66d;
+  }
+  @keyframes rareRewardPop {
+    0% { opacity:0; transform:scale(.25) rotate(-12deg); }
+    18% { opacity:1; transform:scale(1.12) rotate(3deg); }
+    30% { opacity:1; transform:scale(1) rotate(0); }
+    100% { opacity:1; transform:scale(1) rotate(0); }
+  }
+
+  #cheatPanel {
+    position:fixed; top:56px; right:10px; z-index:50;
+    width:min(280px,92vw); background:rgba(13,17,23,.94);
+    border:2px solid #e94560; border-radius:10px; padding:12px 12px 10px;
+    font-family:'Courier New',monospace; color:#eee; font-size:13px;
+    display:none; max-height:calc(100vh - 70px); overflow-y:auto;
+    box-shadow:0 0 24px rgba(233,69,96,.35);
+  }
+  #cheatPanel h3 { margin:0 0 10px; color:#e94560; font-size:15px; letter-spacing:1px; }
+  #cheatPanel .row { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+  #cheatPanel button {
+    flex:1; min-width:40%; padding:8px 6px; font:bold 12px 'Courier New',monospace;
+    border:none; border-radius:5px; cursor:pointer; background:#2a2a44; color:#eee;
+    touch-action:manipulation;
+  }
+  #cheatPanel button.on { background:#e94560; color:#fff; }
+  #cheatPanel button.good { background:#4ecdc4; color:#0d1117; }
+  #cheatToggle {
+    position:fixed; top:8px; right:56px; z-index:51;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(233,69,96,.85); border:2px solid #fff; color:#fff;
+    font:bold 16px/1 'Courier New',monospace; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    touch-action:manipulation;
+  }
+  #cheatStatus {
+    margin-top:6px; font-size:11px; color:#ffd93d; min-height:1.2em; line-height:1.3;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <span>HP: <span id="hp">100</span></span>
+  <span>Счёт: <span id="score">0</span></span>
+  <span>Волна: <span id="wave">1</span> (<span id="remaining">0</span>) <span id="wtimer">45</span>с</span>
+</div>
+<div id="fx"></div>
+<div id="toast"></div>
+<div id="levelup"><b>LEVEL UP!</b><small id="levelupName"></small></div><div id="rareRewardOverlay" role="dialog" aria-modal="true" aria-label="Редкая награда"><div id="rareRewardCard"><img id="rareRewardImage" src="https://tarix67.github.io/The-BIL-Attack/rare_reward.png" alt="Редкая награда"><button id="rareRewardClose" type="button" aria-label="Закрыть">×</button></div></div>
+
+<button id="pauseBtn">⏸</button>
+
+<canvas id="game"></canvas>
+
+<div id="pauseOverlay" class="overlay">
+  <div class="panel">
+    <h2>Пауза</h2>
+    <button id="resumeBtn">Продолжить</button>
+    <button id="openSettingsBtn" class="secondary">Настройки</button>
+    <button id="restartFromPauseBtn" class="secondary">Начать заново</button>
+  </div>
+</div>
+
+<div id="settingsOverlay" class="overlay">
+  <div class="panel">
+    <h2>Настройки</h2>
+    <div class="settings-row">
+      <label for="musicSlider">Музыка</label>
+      <div class="volume-control">
+        <input type="range" id="musicSlider" min="0" max="100" value="30">
+        <span id="musicValue">30%</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label for="sfxSlider">Звуки</label>
+      <div class="volume-control">
+        <input type="range" id="sfxSlider" min="0" max="100" value="50">
+        <span id="sfxValue">50%</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <label for="voiceSlider">Голоса</label>
+      <div class="volume-control">
+        <input type="range" id="voiceSlider" min="0" max="100" value="50">
+        <span id="voiceValue">50%</span>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span>Звук</span>
+      <label><input type="checkbox" id="soundToggle" checked></label>
+    </div>
+    <button id="backToPauseBtn" class="secondary">Назад</button>
+  </div>
+</div>
+
+<div id="startOverlay" class="overlay" style="display:flex;">
+  <div class="panel">
+    <h2>Введите никнейм</h2>
+    <p style="margin:0 0 4px;font-size:13px;"></p>
+    <input id="nameInput" type="text" maxlength="20" placeholder="Ввод..." autocomplete="off">
+    <p id="nameError"></p>
+    <button id="startBtn">Играть</button>
+  </div>
+</div>
+
+<div id="gameover">
+  <h1>WASTED</h1>
+  <p>Счёт: <span id="finalScore">0</span></p>
+  <p>Волна: <span id="finalWave">1</span></p>
+  <p id="submitStatus"></p>
+  <button id="retrySubmitBtn" style="display:none;">Отправить ещё раз</button>
+  <button onclick="restart()">Заново</button>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W, H;
+let zoom = 1, VW, VH; // zoom < 1 на телефонах: камера "отъезжает", видно дальше
+
+let keys = {};
+let player, bullets, enemies, particles, enemyBullets, shockwaves;
+let score, wave, spawnTimer, gameOver;
+let waveEnemiesTotal, waveEnemiesSpawned, waveBreakTimer;
+let plane, pickups, boss;
+let paused = false;
+let started = false;
+let runTime = 0;
+let playerName = '';
+let scoreSubmitted = false;
+let shakeIntensity = 0;
+let hurtFlag = false;
+let hurtFlash = 0; // 0..HURT_FLASH_MAX — насколько экран сейчас красный
+let toastT = 0;
+let lastFxHtml = '';
+
+const PLAYER_SPEED = 280;
+const PLAYER_SIZE = 22;
+const BULLET_SPEED = 550;
+const FIRE_RATE = 0.2;
+const ENEMY_SIZE = 20;
+const ENEMY_SPEED_GROWTH = 0.03; // на сколько доля от скорости игрока растёт за каждую волну
+const JOY_RADIUS = 55;
+const CONTACT_DPS = 30;
+const PARTICLE_LIFE = 0.33;
+const WAVE_BREAK = 1.2;
+const WALL_THICKNESS = 12;
+const PLANE_WAVE_INTERVAL = 3;
+const PLANE_SPEED = 500;
+const CRATE_SIZE = 26;
+const CRATE_LIFE = 25;   // ящик исчезает, если его не подобрали за столько секунд
+const HEAL_AMOUNT = 20;
+const SCORE_BASE = 8;
+const SCORE_WAVE_GROWTH = 1.6;
+const HIT_FLASH_DURATION = 0.08;
+const SHAKE_DECAY = 18;
+const DAMAGE_SOUND_COOLDOWN = 0.35;
+const SPRINT_DURATION = 0.35;
+const SPRINT_MULT = 1.7;
+const SPRINT_COOLDOWN = 4;
+const HURT_FLASH_MAX = 0.3; // максимальная прозрачность красной вспышки (0.3 = "немного")
+const BOSS_EVERY = 5;
+const WAVE_TIME = 45;       // секунд на обычную волну
+const BOSS_WAVE_TIME = 75;  // секунд на волну с боссом
+const MAX_ENEMIES = 80;     // предел монстров на карте, чтобы игра не тормозила
+const MAX_GUNS = 4;
+const ENEMY_DROP_CHANCE = 0.05;
+const RARE_DROP_CHANCE = 1 / 750; // отдельный шанс редкого ящика с каждого убитого моба\n
+const RARE_BUFF_DURATION = 30;
+const VIEW_TARGET = 600; // сколько мировых единиц должно помещаться по МЕНЬШЕЙ стороне экрана
+const MIN_ZOOM = 0.45;
+const AUTO_RANGE = 380;  // дальность, на которой игрок видит цели и стреляет
+const BOSS_JUMP_RANGE = 420; // максимальная дальность прыжка босса
+const BULLET_COLOR = '#0a2a8a'; // тёмно-синий
+let waveTimer = WAVE_TIME;
+
+function waveTimeFor(w) { return w % BOSS_EVERY === 0 ? BOSS_WAVE_TIME : WAVE_TIME; }
+
+function nextWave(forced) {
+  wave++;
+  const isBossWave = wave % BOSS_EVERY === 0;
+  waveEnemiesTotal = isBossWave ? Math.min(16, 6 + (wave / BOSS_EVERY) * 2) : enemiesPerWave(wave);
+  waveEnemiesSpawned = 0;
+  spawnTimer = 0;
+  waveBreakTimer = WAVE_BREAK;
+  waveTimer = waveTimeFor(wave);
+  if (forced) showToast('Время вышло! Волна ' + wave, false);
+  if (isBossWave && !boss) spawnBoss(); // если прошлый босс ещё жив, второго не создаём
+  if (!plane && wave % PLANE_WAVE_INTERVAL === 0) spawnPlane();
+}
+
+let lastTime = 0;
+
+// ---------- Спрайт аптечки ----------
+// Файл лежит рядом с index.html. Пока файла нет или он не загрузился,
+// рисуется зелёный квадрат с плюсом, поэтому игра не сломается.
+// Это лист кадров: MEDKIT_COLS x MEDKIT_ROWS кадров, проигрываются по порядку слева направо, сверху вниз.
+// Для одной статичной картинки поставьте MEDKIT_COLS = 1 и MEDKIT_ROWS = 1.
+const MEDKIT_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/medkit_png.png';
+const MEDKIT_COLS = 3;
+const MEDKIT_ROWS = 4;
+const MEDKIT_FPS = 6;        // кадров в секунду
+const MEDKIT_DRAW_SIZE = 40; // размер одного кадра в игровых единицах (игрок = 22)
+const medkitImg = new Image();
+let medkitReady = false;
+medkitImg.onload = () => { medkitReady = true; };
+medkitImg.src = MEDKIT_SPRITE;
+  // ---------- Птичка вместо самолёта ----------
+const PLANE_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/bird.png';
+const PLANE_DRAW_SIZE = 70; // ширина птички на экране в игровых единицах
+const BIRD_BASE_ANGLE = -0.7; // в картинке птичка летит вправо-вверх (~40°)
+const planeSprite = loadSprite(PLANE_SPRITE);
+
+// ---------- Герои (модельки игрока) ----------
+// После каждого убитого босса игрок становится следующим героем из списка (по кругу).
+// У героя две модельки: calm — обычная (весёлая), hurt — злая (показывается после получения урона).
+// Файлы лежат рядом с index.html. cols x rows — сколько кадров в картинке по горизонтали и вертикали
+// (1 x 1 = одна статичная картинка), fps — скорость анимации. Героев можно добавлять и убирать.
+// Если картинка не загрузилась, вместо героя рисуется кубик, и игра не ломается.
+const HEROES = [
+  { name: '7th grade', calm: 'https://tarix67.github.io/The-BIL-Attack/Жанторе Веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Жанторе грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Жанторе-7.mp3'] },
+  { name: '8th grade', calm: 'https://tarix67.github.io/The-BIL-Attack/Абылай веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Абылай грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Абылай-8.mp3'] },
+  { name: '9th grade', calm: 'https://tarix67.github.io/The-BIL-Attack/Ахмет(9) веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Ахмет(9) грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Ахмет-9.mp3'] },
+  { name: '10th grade', calm: 'https://tarix67.github.io/The-BIL-Attack/Жангир веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Жангир грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Жангир-10.mp3'] },
+  { name: '11th grade', calm: 'https://tarix67.github.io/The-BIL-Attack/Адлет аби веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Адлет аби грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Адлет аби 11.mp3'] },
+  { name: 'Abi', calm: 'https://tarix67.github.io/The-BIL-Attack/Сулейман аби веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Сулейман аби грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Сулейман аби голос2.mp3'] },
+  { name: 'Agay', calm: 'https://tarix67.github.io/The-BIL-Attack/Аян агай веселый.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Аян агай грустный.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/hero7_1.mp3'] },
+  { name: 'Teacher from Jupiter', calm: 'https://tarix67.github.io/The-BIL-Attack/Тимур агай просто.png', hurt: 'https://tarix67.github.io/The-BIL-Attack/Тимур агай злой.png', cols: 1, rows: 1, fps: 6,
+    voices: ['https://tarix67.github.io/The-BIL-Attack/Тимур агай голос2.mp3'] },
+];
+// ---------- Модельки мобов и боссов (несколько вариантов на каждого) ----------
+// makeSkins(ширина на экране, [файлы], столбцы, строки, fps).
+// Столбцы/строки/fps нужны только если в каждой картинке лист кадров анимации.
+function makeSkins(draw, files, cols = 1, rows = 1, fps = 6) {
+  return files.map(src => { const s = loadSprite(src); Object.assign(s, { draw, cols, rows, fps }); return s; });
+}
+const ENEMY_SPRITES = {
+  chaser:  makeSkins(36, ['https://tarix67.github.io/The-BIL-Attack/8.png', 'https://tarix67.github.io/The-BIL-Attack/88 (1).png', 'https://tarix67.github.io/The-BIL-Attack/8888 (1).png', 'https://tarix67.github.io/The-BIL-Attack/Сулейман (8).png', 'https://tarix67.github.io/The-BIL-Attack/Димаш (1).png']),
+  runner:  makeSkins(30, ['https://tarix67.github.io/The-BIL-Attack/7.png', 'https://tarix67.github.io/The-BIL-Attack/77.png', 'https://tarix67.github.io/The-BIL-Attack/777.png', 'https://tarix67.github.io/The-BIL-Attack/7777.png', 'https://tarix67.github.io/The-BIL-Attack/Алимжан(7).png']),
+  giant:   makeSkins(80, ['https://tarix67.github.io/The-BIL-Attack/Алихан.png', 'https://tarix67.github.io/The-BIL-Attack/Рахат.png', 'https://tarix67.github.io/The-BIL-Attack/Алмаз.png', 'https://tarix67.github.io/The-BIL-Attack/Айдар.png']),
+  shooter: makeSkins(36, ['https://tarix67.github.io/The-BIL-Attack/Парасат.png', 'https://tarix67.github.io/The-BIL-Attack/Алих(9).png', 'https://tarix67.github.io/The-BIL-Attack/9.png', 'https://tarix67.github.io/The-BIL-Attack/Танжик.png'])
+};
+const BOSS_SPRITES = [ // по порядку BOSS_DEFS: Гренадёр, Прыгун, Метатель, Хаос
+  makeSkins(96,  ['https://tarix67.github.io/The-BIL-Attack/Асанали аби.png']),
+  makeSkins(96,  ['https://tarix67.github.io/The-BIL-Attack/Шухрат агай.png']),
+  makeSkins(96,  ['https://tarix67.github.io/The-BIL-Attack/Айбар агай.png']),
+  makeSkins(110, ['https://tarix67.github.io/The-BIL-Attack/Ахмет агай.png'])
+];
+const pickSkin = list => Math.floor(Math.random() * list.length);
+const HERO_DRAW_SIZE = 44;   // ширина героя на экране в игровых единицах (хитбокс остаётся 22)
+const HERO_FLIP = true;      // true — зеркалить героя, когда он идёт влево (в картинках он должен смотреть вправо)
+const HURT_FACE_TIME = 1.0;  // сколько секунд держится злая моделька после получения урона
+let heroIndex = 0;           // номер текущего героя (растёт после каждого босса)
+let hurtFaceT = 0;           // сколько ещё секунд показывать злую моделька
+let facing = 1;              // 1 — смотрит вправо, -1 — влево
+
+function loadSprite(src) {
+  const sp = { img: new Image(), ok: false };
+  sp.img.onload = () => { sp.ok = true; };
+  sp.img.src = src;
+  return sp;
+}
+for (const h of HEROES) { h.calmSprite = loadSprite(h.calm); h.hurtSprite = loadSprite(h.hurt); }
+
+// ---------- Голоса (записи звука) ----------
+// Файлы лежат рядом с index.html. Если файла нет или он не загрузился, звука просто не будет.
+function loadVoices(files) {
+  return (files || []).map(src => {
+    const a = new Audio(src);
+    a.preload = 'auto';
+    return a;
+  });
+}
+// Звук героя при уроне: у каждого героя свои файлы в поле voices (см. массив HEROES выше).
+// Если файлов несколько — выбирается случайный. Нет файлов у героя — звука нет.
+for (const h of HEROES) h.voiceSounds = loadVoices(h.voices);
+// Звук, когда босс атакует. По порядку BOSS_DEFS: Асанали, Шухрат, Айбар, Ахмет
+const BOSS_VOICES = [
+  loadVoices(['https://tarix67.github.io/The-BIL-Attack/Асанали-аби-голос.mp3', 'https://tarix67.github.io/The-BIL-Attack/Асанали-аби-голос2.mp3']),
+  loadVoices(['https://tarix67.github.io/The-BIL-Attack/Шухрат агай голос1.mp3', 'https://tarix67.github.io/The-BIL-Attack/Шухрат агай голос2.mp3']),
+  loadVoices(['https://tarix67.github.io/The-BIL-Attack/Айбар-агай-голос1.mp3', 'https://tarix67.github.io/The-BIL-Attack/Айбар-агай-голос2.mp3']),
+  loadVoices(['https://tarix67.github.io/The-BIL-Attack/Ахмет агай голос1.mp3', 'https://tarix67.github.io/The-BIL-Attack/Ахмет агай голос2.mp3'])
+];
+const VOICE_COOLDOWN = 0.8; // герой не кричит чаще, чем раз в столько секунд (урон идёт каждый кадр)
+let heroVoiceCd = 0;
+let lastVoice = { hero: null, boss: null };
+
+function playVoice(list, who) {
+  if (!soundEnabled || !list || !list.length) return;
+  const prev = lastVoice[who];
+  if (prev) { prev.pause(); prev.currentTime = 0; }
+  const a = list[Math.floor(Math.random() * list.length)];
+  a.currentTime = 0;
+  lastVoice[who] = a;
+  a.play().catch(() => {});
+}
+function heroVoice() {
+  if (heroVoiceCd > 0) return;
+  heroVoiceCd = VOICE_COOLDOWN;
+  playVoice(HEROES[heroIndex % HEROES.length].voiceSounds, 'hero'); // голос текущего героя
+}
+function bossVoice() {
+  if (boss) playVoice(BOSS_VOICES[boss.n % BOSS_DEFS.length], 'boss');
+}
+
+// рисует текущего героя; false — если картинки не загрузились (тогда рисуется кубик)
+function drawHero() {
+  const h = HEROES[heroIndex % HEROES.length];
+  if (!h) return false;
+  let sp = hurtFaceT > 0 ? h.hurtSprite : h.calmSprite;
+  if (!sp.ok) sp = hurtFaceT > 0 ? h.calmSprite : h.hurtSprite; // запасной вариант, если одна из двух не загрузилась
+  if (!sp.ok) return false;
+  const fw = sp.img.naturalWidth / h.cols, fh = sp.img.naturalHeight / h.rows;
+  const frames = h.cols * h.rows;
+  const f = frames > 1 ? Math.floor(performance.now() / 1000 * h.fps) % frames : 0;
+  const w = HERO_DRAW_SIZE, hh = HERO_DRAW_SIZE * fh / fw;
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  if (HERO_FLIP && facing < 0) ctx.scale(-1, 1);
+  ctx.imageSmoothingEnabled = false; // чтобы пиксель-арт не размывался
+  ctx.drawImage(sp.img, (f % h.cols) * fw, Math.floor(f / h.cols) * fh, fw, fh, -w / 2, -hh / 2, w, hh);
+  ctx.restore();
+  return true;
+}
+
+// ---------- Карта (картинка мира) ----------
+// Файл лежит рядом с index.html. Если файла нет или он не загрузился, рисуется тёмный фон с сеткой.
+// Мир берёт размер из картинки. Картинка растягивается в ЦЕЛОЕ число раз (чтобы пиксели не плыли):
+// MAP_SCALE = null — подобрать автоматически, чтобы мир был не меньше минимального размера (см. computeWorldSize);
+// MAP_SCALE = 2 (или 3, 4...) — задать вручную.
+const MAP_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/map.png';
+const MAP_SCALE = null;
+const mapImg = new Image();
+let mapState = 'loading'; // 'loading' | 'ready' | 'none'
+let mapScale = 1;
+mapImg.onload = () => { mapState = 'ready'; tryBuildGrid(); if (!started) init(); };
+mapImg.onerror = () => { mapState = 'none'; };
+mapImg.src = MAP_SPRITE;
+
+// ---------- Непроходимые зоны ----------
+// map_mask.png: тот же размер, что и map.png. Непрозрачный пиксель = стена, прозрачный = можно ходить.
+// BLOCK_RECTS: доп. прямоугольники [x, y, ширина, высота] в ПИКСЕЛЯХ map.png (можно использовать вместо маски).
+const MASK_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/map_mask.png';
+const BLOCK_RECTS = [];
+const DEBUG_BLOCKS = false; // true — подсветить непроходимые зоны красным, чтобы проверить маску
+const maskImg = new Image();
+let maskState = 'loading'; // 'loading' | 'ready' | 'none'
+let blockGrid = null, gridW = 0, gridH = 0;
+maskImg.onload = () => { maskState = 'ready'; tryBuildGrid(); if (!started && mapState === 'ready') init(); };
+maskImg.onerror = () => { maskState = 'none'; tryBuildGrid(); if (!started && mapState === 'ready') init(); };
+maskImg.src = MASK_SPRITE;
+
+function tryBuildGrid() {
+  if (mapState !== 'ready' || maskState === 'loading') return;
+  gridW = mapImg.naturalWidth; gridH = mapImg.naturalHeight;
+  blockGrid = new Uint8Array(gridW * gridH);
+  if (maskState === 'ready') {
+    try {
+      const c = document.createElement('canvas'); c.width = gridW; c.height = gridH;
+      const cx = c.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(maskImg, 0, 0, gridW, gridH);
+      const d = cx.getImageData(0, 0, gridW, gridH).data;
+      for (let i = 0; i < blockGrid.length; i++) if (d[i * 4 + 3] > 128) blockGrid[i] = 1;
+    } catch (e) { console.warn('Маска не прочиталась (открыт file://? нужен сервер):', e); }
+  }
+  for (const [rx, ry, rw, rh] of BLOCK_RECTS)
+    for (let y = Math.max(0, ry); y < Math.min(gridH, ry + rh); y++)
+      for (let x = Math.max(0, rx); x < Math.min(gridW, rx + rw); x++) blockGrid[y * gridW + x] = 1;
+}
+
+function isBlocked(x, y) {
+  if (!blockGrid) return false;
+  const mx = Math.floor(x / mapScale), my = Math.floor(y / mapScale);
+  if (mx < 0 || my < 0 || mx >= gridW || my >= gridH) return false;
+  return blockGrid[my * gridW + mx] === 1;
+}
+function blockedAt(x, y, r) {
+  return isBlocked(x, y) || isBlocked(x + r, y) || isBlocked(x - r, y) || isBlocked(x, y + r) || isBlocked(x, y - r);
+}
+// o уже сдвинут на шаг; (ox, oy) — позиция до шага. Если упёрлись в стену, скользим вдоль неё.
+function resolveMove(o, ox, oy, r) {
+  if (!blockedAt(o.x, o.y, r)) return;
+  const nx = o.x, ny = o.y;
+  if (!blockedAt(nx, oy, r)) { o.x = nx; o.y = oy; }        // скользим вдоль стены по X
+  else if (!blockedAt(ox, ny, r)) { o.x = ox; o.y = ny; }   // скользим вдоль стены по Y
+  else { o.x = ox; o.y = oy; }
+  if (blockedAt(o.x, o.y, r)) Object.assign(o, findFreeNear(o.x, o.y, r));
+}
+// ---------- Зоны, где нельзя спавнить мобов (красные) ----------
+// spawn_mask.png лежит рядом с index.html. Красный пиксель = здесь НЕ появляются мобы.
+// Любой другой цвет или прозрачность = спавн разрешён. Ходить по красным зонам можно, это не стены.
+// Маска растягивается на весь мир, поэтому лучше, чтобы её размер совпадал с map.png
+// (или хотя бы пропорции были те же). Если файла нет, ограничений нет и игра работает как раньше.
+const SPAWN_MASK_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/spawn_mask.png';
+const DEBUG_SPAWN_ZONES = false; // true — показать запретные зоны поверх карты, чтобы проверить маску
+// какой пиксель считается красным: красный канал яркий, зелёный и синий тёмные
+const RED_MIN = 150, RED_OTHER_MAX = 100;
+const spawnMaskImg = new Image();
+let spawnMaskState = 'loading'; // 'loading' | 'ready' | 'none'
+let noSpawnGrid = null, nsW = 0, nsH = 0;
+spawnMaskImg.onload = () => { spawnMaskState = 'ready'; buildNoSpawnGrid(); };
+spawnMaskImg.onerror = () => { spawnMaskState = 'none'; };
+spawnMaskImg.src = SPAWN_MASK_SPRITE;
+
+// ---------- Где появляются боссы (зелёные зоны) ----------
+// map_mask2.png лежит рядом с index.html. Зелёный пиксель = здесь может появиться босс.
+// Маска растягивается на весь мир, поэтому её размер должен совпадать с map.png (или хотя бы пропорции).
+// Если файла нет или он не прочитался, боссы появляются как раньше (в углу, подальше от игрока).
+const BOSS_SPAWN_MASK_SPRITE = 'https://tarix67.github.io/The-BIL-Attack/map_mask2.png';
+const DEBUG_BOSS_ZONES = false; // true — показать зелёные зоны поверх карты, чтобы проверить маску
+const BOSS_WALL_R = 14;         // радиус босса для стен (был 24, из-за него он застревал там, где мобы проходят)
+const GREEN_MIN = 150, GREEN_OTHER_MAX = 100; // какой пиксель считается зелёным
+const bossMaskImg = new Image();
+let bossMaskState = 'loading'; // 'loading' | 'ready' | 'none'
+let bossSpawnPts = null, bmW = 0, bmH = 0;
+bossMaskImg.onload = () => { bossMaskState = 'ready'; buildBossSpawnPts(); };
+bossMaskImg.onerror = () => { bossMaskState = 'none'; };
+bossMaskImg.src = BOSS_SPAWN_MASK_SPRITE;
+
+function buildBossSpawnPts() {
+  bmW = bossMaskImg.naturalWidth; bmH = bossMaskImg.naturalHeight;
+  try {
+    const c = document.createElement('canvas'); c.width = bmW; c.height = bmH;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.drawImage(bossMaskImg, 0, 0);
+    const d = cx.getImageData(0, 0, bmW, bmH).data;
+    const pts = [];
+    for (let y = 0; y < bmH; y += 2) for (let x = 0; x < bmW; x += 2) {
+      const i = (y * bmW + x) * 4;
+      if (d[i + 3] > 128 && d[i + 1] >= GREEN_MIN && d[i] <= GREEN_OTHER_MAX && d[i + 2] <= GREEN_OTHER_MAX) pts.push([x, y]);
+    }
+    bossSpawnPts = pts;
+  } catch (e) { console.warn('Маска боссов не прочиталась (открыт file://? нужен сервер):', e); }
+}
+
+// точка появления босса: в зелёной зоне, не в стене, желательно достижимая и подальше от игрока
+function pickBossSpawn() {
+  if (!bossSpawnPts || !bossSpawnPts.length) return null;
+  const all = [], reachable = [];
+  for (let i = 0; i < 80; i++) {
+    const p = bossSpawnPts[Math.floor(Math.random() * bossSpawnPts.length)];
+    const x = Math.max(30, Math.min(WORLD_W - 30, (p[0] + 0.5) / bmW * WORLD_W));
+    const y = Math.max(30, Math.min(WORLD_H - 30, (p[1] + 0.5) / bmH * WORLD_H));
+    if (blockedAt(x, y, BOSS_WALL_R)) continue;
+    const c = { x, y, d: Math.hypot(x - player.x, y - player.y) };
+    all.push(c);
+    if (flowDistAt(x, y) !== -1) reachable.push(c);
+  }
+  const list = reachable.length ? reachable : all;
+  if (!list.length) { // все выбранные точки в стенах: берём любую зелёную и сдвигаем к ближайшему свободному месту
+    const p = bossSpawnPts[Math.floor(Math.random() * bossSpawnPts.length)];
+    return findFreeNear((p[0] + 0.5) / bmW * WORLD_W, (p[1] + 0.5) / bmH * WORLD_H, BOSS_WALL_R);
+  }
+  const far = list.filter(c => c.d > 700);
+  const pool = far.length ? far : [list.reduce((a, b) => (b.d > a.d ? b : a))];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function buildNoSpawnGrid() {
+  nsW = spawnMaskImg.naturalWidth; nsH = spawnMaskImg.naturalHeight;
+  try {
+    const c = document.createElement('canvas'); c.width = nsW; c.height = nsH;
+    const cx = c.getContext('2d', { willReadFrequently: true });
+    cx.drawImage(spawnMaskImg, 0, 0);
+    const d = cx.getImageData(0, 0, nsW, nsH).data;
+    const grid = new Uint8Array(nsW * nsH);
+    for (let i = 0; i < grid.length; i++) {
+      const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2], a = d[i * 4 + 3];
+      if (a > 128 && r >= RED_MIN && g <= RED_OTHER_MAX && b <= RED_OTHER_MAX) grid[i] = 1;
+    }
+    noSpawnGrid = grid;
+  } catch (e) { console.warn('Маска спавна не прочиталась (открыт file://? нужен сервер):', e); }
+}
+
+// точка (в мировых координатах) лежит в красной зоне?
+function inNoSpawnZone(x, y) {
+  if (!noSpawnGrid || !WORLD_W) return false;
+  const mx = Math.floor(x / WORLD_W * nsW), my = Math.floor(y / WORLD_H * nsH);
+  if (mx < 0 || my < 0 || mx >= nsW || my >= nsH) return false;
+  return noSpawnGrid[my * nsW + mx] === 1;
+}
+// можно ли поставить сюда моба радиуса r: не стена и ни одна часть тела не в красной зоне
+function canSpawnAt(x, y, r) {
+  if (blockedAt(x, y, r)) return false;
+  return !(inNoSpawnZone(x, y) || inNoSpawnZone(x + r, y) || inNoSpawnZone(x - r, y) ||
+           inNoSpawnZone(x, y + r) || inNoSpawnZone(x, y - r));
+}
+// ближайшая точка, где разрешён спавн (не стена и не красная зона)
+function findSpawnNear(x, y, r) {
+  if (canSpawnAt(x, y, r)) return { x, y };
+  for (let d = 20; d <= 1500; d += 20)
+    for (let a = 0; a < 24; a++) {
+      const px = x + Math.cos(a / 24 * Math.PI * 2) * d, py = y + Math.sin(a / 24 * Math.PI * 2) * d;
+      if (px < r || py < r || px > WORLD_W - r || py > WORLD_H - r) continue;
+      if (canSpawnAt(px, py, r)) return { x: px, y: py };
+    }
+  return findFreeNear(x, y, r); // запасной вариант: если вся карта красная, хотя бы не в стене
+}
+
+// ближайшая свободная точка (для спавна, приземлений и ящиков)
+function findFreeNear(x, y, r) {
+  if (!blockedAt(x, y, r)) return { x, y };
+  for (let d = 20; d <= 800; d += 20)
+    for (let a = 0; a < 16; a++) {
+      const px = x + Math.cos(a / 16 * Math.PI * 2) * d, py = y + Math.sin(a / 16 * Math.PI * 2) * d;
+      if (!blockedAt(px, py, r)) return { x: px, y: py };
+    }
+  return { x, y };
+}
+
+// ---------- Поиск пути: карта расстояний до игрока ----------
+const NAV_CELL = 32; // размер клетки. Проходы уже ~2 клеток для монстров считаются закрытыми
+const NDX = [1, -1, 0, 0, 1, 1, -1, -1], NDY = [0, 0, 1, -1, 1, -1, 1, -1];
+let navCols = 0, navRows = 0, navBlocked = null, navDist = null, navQueue = null;
+let flowTimer = 0, flowCell = -1;
+
+function buildNav() {
+  navCols = Math.ceil(WORLD_W / NAV_CELL); navRows = Math.ceil(WORLD_H / NAV_CELL);
+  navBlocked = new Uint8Array(navCols * navRows);
+  navDist = new Int32Array(navCols * navRows).fill(-1);
+  navQueue = new Int32Array(navCols * navRows);
+  const o = NAV_CELL * 0.4;
+  for (let cy = 0; cy < navRows; cy++) for (let cx = 0; cx < navCols; cx++) {
+    const x = (cx + 0.5) * NAV_CELL, y = (cy + 0.5) * NAV_CELL;
+    let b = false;
+    for (let i = -1; i <= 1 && !b; i++) for (let j = -1; j <= 1; j++)
+      if (isBlocked(x + i * o, y + j * o)) { b = true; break; }
+    if (b) navBlocked[cy * navCols + cx] = 1;
+  }
+  flowCell = -1; flowTimer = 0;
+}
+
+function updateFlow(dt) {
+  if (!navDist) return;
+  let sx = Math.max(0, Math.min(navCols - 1, Math.floor(player.x / NAV_CELL)));
+  let sy = Math.max(0, Math.min(navRows - 1, Math.floor(player.y / NAV_CELL)));
+  const pc = sy * navCols + sx;
+  flowTimer -= dt;
+  if (flowTimer > 0 && pc === flowCell) return;
+  flowTimer = 0.25; flowCell = pc;
+  if (navBlocked[pc]) { // клетка игрока у самой стены — берём ближайшую свободную
+    let found = false;
+    for (let r = 1; r <= 4 && !found; r++)
+      for (let dy = -r; dy <= r && !found; dy++) for (let dx = -r; dx <= r; dx++) {
+        const x = sx + dx, y = sy + dy;
+        if (x < 0 || y < 0 || x >= navCols || y >= navRows) continue;
+        if (!navBlocked[y * navCols + x]) { sx = x; sy = y; found = true; break; }
+      }
+  }
+  navDist.fill(-1);
+  let head = 0, tail = 0;
+  navDist[sy * navCols + sx] = 0; navQueue[tail++] = sy * navCols + sx;
+  while (head < tail) {
+    const c = navQueue[head++], cx = c % navCols, cy = (c / navCols) | 0, d = navDist[c] + 1;
+    for (let k = 0; k < 8; k++) {
+      const nx = cx + NDX[k], ny = cy + NDY[k];
+      if (nx < 0 || ny < 0 || nx >= navCols || ny >= navRows) continue;
+      const n = ny * navCols + nx;
+      if (navBlocked[n] || navDist[n] !== -1) continue;
+      if (k >= 4 && (navBlocked[cy * navCols + nx] || navBlocked[ny * navCols + cx])) continue; // не режем углы
+      navDist[n] = d; navQueue[tail++] = n;
+    }
+  }
+}
+
+function flowDistAt(x, y) {
+  if (!navDist) return 0;
+  const cx = Math.max(0, Math.min(navCols - 1, Math.floor(x / NAV_CELL)));
+  const cy = Math.max(0, Math.min(navRows - 1, Math.floor(y / NAV_CELL)));
+  return navDist[cy * navCols + cx];
+}
+
+function hasLineOfSight(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, n = Math.ceil(Math.hypot(dx, dy) / 16);
+  for (let i = 1; i < n; i++) if (blockedAt(x1 + dx * i / n, y1 + dy * i / n, 10)) return false;
+  return true;
+}
+// чистая линия выстрела: между точками нет стен (точечная проверка, мельче, чем hasLineOfSight)
+function clearShot(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, n = Math.ceil(Math.hypot(dx, dy) / 10);
+  for (let i = 1; i < n; i++) if (isBlocked(x1 + dx * i / n, y1 + dy * i / n)) return false;
+  return true;
+}
+
+// угол движения: напрямую, если игрока видно, иначе к соседней клетке, которая ближе к нему
+function steerAngle(o, direct) {
+  if (!navDist || hasLineOfSight(o.x, o.y, player.x, player.y)) return direct;
+  const cx = Math.max(0, Math.min(navCols - 1, Math.floor(o.x / NAV_CELL)));
+  const cy = Math.max(0, Math.min(navRows - 1, Math.floor(o.y / NAV_CELL)));
+  let best = navDist[cy * navCols + cx];
+  if (best < 0) best = Infinity;
+  let bx = -1, by = -1;
+  for (let k = 0; k < 8; k++) {
+    const nx = cx + NDX[k], ny = cy + NDY[k];
+    if (nx < 0 || ny < 0 || nx >= navCols || ny >= navRows) continue;
+    const d = navDist[ny * navCols + nx];
+    if (d < 0 || d >= best) continue;
+    if (k >= 4 && (navBlocked[cy * navCols + nx] || navBlocked[ny * navCols + cx])) continue;
+    best = d; bx = nx; by = ny;
+  }
+  if (bx < 0) return direct;
+  return Math.atan2((by + 0.5) * NAV_CELL - o.y, (bx + 0.5) * NAV_CELL - o.x);
+}
+
+// точка спавна у края мира: не в стене и достижимая для игрока
+function pickSpawnPoint() {
+  const m = 40;
+  for (let t = 0; t < 60; t++) {
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    if (side === 0) { x = m; y = m + Math.random() * (WORLD_H - m * 2); }
+    else if (side === 1) { x = WORLD_W - m; y = m + Math.random() * (WORLD_H - m * 2); }
+    else if (side === 2) { x = m + Math.random() * (WORLD_W - m * 2); y = m; }
+    else { x = m + Math.random() * (WORLD_W - m * 2); y = WORLD_H - m; }
+    if (canSpawnAt(x, y, 14) && flowDistAt(x, y) !== -1) return { x, y };
+  }
+  for (let t = 0; t < 300; t++) { // запасной вариант: любое достижимое место подальше от игрока
+    const x = 40 + Math.random() * (WORLD_W - 80), y = 40 + Math.random() * (WORLD_H - 80);
+    if (canSpawnAt(x, y, 14) && flowDistAt(x, y) > 0 && Math.hypot(x - player.x, y - player.y) > 400) return { x, y };
+  }
+  return findSpawnNear(40, 40, 14);
+}
+
+// ---------- Лидерборд (Supabase) ----------
+const SUPABASE_URL = 'https://wydvpmrmsmhjwtwaafxe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v73ueWUwtzxivjLLONlTlA_iKlWfPhy';
+
+function leaderboardConfigured() {
+  return SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.startsWith('PASTE');
+}
+function supabaseHeaders() {
+  const h = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+  if (SUPABASE_KEY.startsWith('eyJ')) h['Authorization'] = 'Bearer ' + SUPABASE_KEY;
+  return h;
+}
+async function submitScore() {
+  const statusEl = document.getElementById('submitStatus');
+  const retryBtn = document.getElementById('retrySubmitBtn');
+  retryBtn.style.display = 'none';
+  if (scoreSubmitted) return;
+  if (!leaderboardConfigured()) { statusEl.textContent = ''; return; }
+  statusEl.textContent = 'Отправляем результат...';
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/submit_score', {
+      method: 'POST',
+      headers: supabaseHeaders(),
+      body: JSON.stringify({
+        p_name: playerName,
+        p_score: Math.floor(score),
+        p_wave: wave,
+        p_duration: Math.round(runTime * 10) / 10
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    scoreSubmitted = true;
+    statusEl.textContent = 'Результат сохранён ✓';
+  } catch (e) {
+    statusEl.textContent = 'Не удалось отправить результат. Проверьте интернет.';
+    retryBtn.style.display = 'inline-block';
+  }
+}
+document.getElementById('retrySubmitBtn').addEventListener('click', submitScore);
+
+// ---------- Экран ввода имени ----------
+const startOverlay = document.getElementById('startOverlay');
+const nameInput = document.getElementById('nameInput');
+try { nameInput.value = localStorage.getItem('playerName') || ''; } catch (e) {}
+
+function startGame() {
+  const name = nameInput.value.trim().replace(/\s+/g, ' ');
+  if (name.length < 2) {
+    document.getElementById('nameError').textContent = 'Введите имя (минимум 2 символа)';
+    return;
+  }
+  if (mapState === 'loading' || maskState === 'loading' || spawnMaskState === 'loading' || bossMaskState === 'loading') {
+    document.getElementById('nameError').textContent = 'Загружается карта, нажмите ещё раз через секунду...';
+    return;
+  }
+  document.getElementById('nameError').textContent = '';
+  playerName = name;
+  try { localStorage.setItem('playerName', name); } catch (e) {}
+  started = true;
+  playMusic();
+  lastTime = 0;
+  startOverlay.style.display = 'none';
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
+
+// ---------- Звук ----------
+let audioCtx = null;
+let soundEnabled = true;
+let musicVolume = 0.3; // громкость музыки 0..1 (ползунок в настройках)
+let sfxVolume = 0.5;   // громкость звуков (выстрелы и т.п.) 0..1 (ползунок в настройках)
+let voiceVolume = 0.5; // громкость голосов героев и боссов 0..1 (ползунок в настройках)
+
+// ---------- Фоновая музыка ----------
+const musicTracks = [
+  'https://tarix67.github.io/The-BIL-Attack/music1.mp3',
+  'https://tarix67.github.io/The-BIL-Attack/music2.mp3',
+  'https://tarix67.github.io/The-BIL-Attack/music3.mp3'
+];
+
+let currentTrack = 0;
+
+const music = new Audio();
+music.volume = musicVolume; // музыка регулируется своим ползунком
+
+function playMusic() {
+  if (!soundEnabled) return;
+
+  music.src = musicTracks[currentTrack];
+  music.play().catch(() => {});
+}
+
+// Когда песня заканчивается, включаем следующую
+music.addEventListener('ended', () => {
+  currentTrack = (currentTrack + 1) % musicTracks.length;
+  playMusic();
+});
+  
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  } else if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+window.addEventListener('pointerdown', ensureAudio);
+window.addEventListener('keydown', ensureAudio);
+
+function beep(freq, duration, type, volume) {
+  if (!soundEnabled || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'square';
+  osc.frequency.value = freq;
+  gain.gain.value = (volume != null ? volume : 0.12) * sfxVolume;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  osc.start(now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+  osc.stop(now + duration);
+}
+function sfxShoot()     { beep(760, 0.045, 'square', 0.04); }
+function sfxHit()       { beep(180, 0.06, 'sawtooth', 0.07); }
+function sfxDeath()     { beep(110, 0.14, 'sawtooth', 0.09); }
+function sfxPickup()    { beep(700, 0.16, 'sine', 0.10); }
+function sfxDamage()    { beep(90, 0.12, 'square', 0.10); }
+function sfxEnemyShot() { beep(320, 0.05, 'triangle', 0.05); }
+function sfxBoom()      { beep(55, 0.35, 'sawtooth', 0.14); }
+
+function triggerShake(amount) { shakeIntensity = Math.max(shakeIntensity, amount); }
+
+const toastEl = document.getElementById('toast');
+function showToast(text, good) {
+  toastEl.textContent = text;
+  toastEl.style.color = good === 'neutral' ? '#ffd93d' : (good ? '#7CFC00' : '#ff6b81');
+  toastEl.style.opacity = 1;
+  toastT = 1.8;
+}
+
+// ---------- Level Up (после убийства босса) ----------
+const levelEl = document.getElementById('levelup'), levelNameEl = document.getElementById('levelupName');
+function showLevelUp(name) {
+  levelNameEl.textContent = name || '';
+  levelEl.classList.remove('show');
+  void levelEl.offsetWidth; // перезапуск CSS-анимации
+  levelEl.classList.add('show');
+  [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.16, 'square', 0.07), i * 110));
+}
+
+// ---------- Темы ----------
+const THEMES = {
+  desert: { label: 'Пустыня', enemyLabel: 'Монстр',  playerLabel: 'Солдат',  playerColor: '#4ecdc4', enemyHueBase: 350, bgColor: '#0d1117', gridColor: '#1e2030', wallColor: '#e94560' }
+};
+let currentTheme = 'desert';
+
+function switchTheme(name) {
+  if (!THEMES[name]) return;
+  currentTheme = name;
+  canvas.style.background = THEMES[name].bgColor;
+}
+
+// ---------- Баффы и дебаффы (каждый временный эффект длится ~10 секунд) ----------
+const EFFECT_DURATION = 10;
+const GOOD = [
+  { id: 'rate_up',    label: 'Скорострельность+', dur: EFFECT_DURATION },
+  { id: 'speed_up',   label: 'Скорость+',         dur: EFFECT_DURATION },
+  { id: 'heal',       label: 'Лечение +20' },
+  { id: 'dmg_up',     label: 'Двойной урон',      dur: EFFECT_DURATION },
+  { id: 'shield',     label: 'Щит',               dur: EFFECT_DURATION }
+];
+const BAD = [
+  { id: 'rate_down',  label: 'Скорострельность−', dur: EFFECT_DURATION },
+  { id: 'speed_down', label: 'Скорость−',         dur: EFFECT_DURATION },
+  { id: 'hurt',       label: 'Урон −20 HP' },
+  { id: 'invert',     label: 'Инверсия управления', dur: EFFECT_DURATION },
+  { id: 'rage',       label: 'Враги в ярости',    dur: EFFECT_DURATION }
+];
+const HEAL_DEF = GOOD.find(d => d.id === 'heal');
+const hasFx = id => (player.fx[id] || 0) > 0;
+
+// Ящик из убитого врага: случайный бафф (75%) или дебафф (25%), содержимое неизвестно ("?")
+function makeCrate(x, y, forceGood) {
+  const good = forceGood || Math.random() < 0.75;
+  const list = good ? GOOD : BAD;
+  return { x, y, good, def: list[Math.floor(Math.random() * list.length)], bobPhase: 0, life: CRATE_LIFE, known: false };
+}
+// Ящик с самолёта: всегда аптечка, и это видно по зелёному "+"
+function makeMedkit(x, y) {
+  return { x, y, good: true, def: HEAL_DEF, bobPhase: 0, life: CRATE_LIFE, known: true };
+}
+
+// Особый ящик: все положительные временные эффекты сразу на 30 секунд.
+function makeRareCrate(x, y) {
+  return { x, y, rare: true, bobPhase: 0, life: CRATE_LIFE };
+}
+
+const RARE_REWARD_IMAGE = 'https://tarix67.github.io/The-BIL-Attack/rare_reward.png'; // замени на точное имя файла своей картинки
+function showRareReward() {
+  const overlay = document.getElementById('rareRewardOverlay');
+  const img = document.getElementById('rareRewardImage');
+  img.src = RARE_REWARD_IMAGE;
+  overlay.style.display = 'flex';
+  // Полностью останавливаем игровой мир, пока игрок не закроет оповещение.
+  paused = true;
+  music.pause();
+  img.style.animation = 'none';
+  void img.offsetWidth;
+  img.style.animation = '';
+}
+
+function closeRareReward() {
+  document.getElementById('rareRewardOverlay').style.display = 'none';
+  paused = false;
+  if (soundEnabled && started && !gameOver) music.play().catch(() => {});
+}
+
+document.getElementById('rareRewardClose').addEventListener('click', closeRareReward);
+
+function collectPickup(p) {
+  if (p.rare) {
+    player.fx.rate_up = RARE_BUFF_DURATION;
+    player.fx.speed_up = RARE_BUFF_DURATION;
+    player.fx.dmg_up = RARE_BUFF_DURATION;
+    player.fx.shield = RARE_BUFF_DURATION;
+    for (let i = 0; i < 24; i++) spawnParticles(p.x, p.y, '#fff6a5');
+    showToast('РЕДКАЯ НАГРАДА! ВСЕ БАФФЫ НА 30 СЕКУНД', 'neutral');
+    showRareReward();
+    sfxPickup();
+    return;
+  }
+  const d = p.def;
+  if (d.id === 'heal') player.hp = Math.min(player.maxHp, player.hp + HEAL_AMOUNT);
+  else if (d.id === 'hurt') { player.hp -= 20; flashHurt(20); triggerShake(6); } // дебафф: голос НЕ играет
+  else player.fx[d.id] = d.dur;
+  spawnParticles(p.x, p.y, '#ffd93d');
+  showToast(d.label, 'neutral');
+  sfxPickup();
+}
+
+// ---------- Типы врагов ----------
+// speedFrac — стартовая скорость как доля от скорости игрока; с каждой волной растёт до speedCap.
+const ENEMY_TYPES = {
+  chaser:  { hpBase: 2,  sizeMult: 1,   speedFrac: 0.60, speedCap: 0.95, contactDpsMult: 1,   minWave: 1,  hueOffset: 0,   shape: 'square' },
+  runner:  { hpBase: 1,  sizeMult: 0.7, speedFrac: 0.95, speedCap: 1.00, contactDpsMult: 0.6, minWave: 3,  hueOffset: 60,  shape: 'diamond' },
+  giant:   { hpBase: 10, sizeMult: 2.1, speedFrac: 0.30, speedCap: 0.50, contactDpsMult: 2.2, minWave: 10, hueOffset: 140, shape: 'circle',
+             // прыгает рядом с игроком; при приземлении — небольшая звуковая волна
+             jumper: true, jumpCd: 3.0, jumpRange: 300, jumpDur: 0.65, waveMax: 150, waveDmgBase: 3, waveDmgVar: 11 },
+  shooter: { hpBase: 2,  sizeMult: 0.9, speedFrac: 0.50, speedCap: 0.80, contactDpsMult: 0.7, minWave: 7,  hueOffset: 210, shape: 'triangle',
+             ranged: true, shootRange: AUTO_RANGE * 1.5, shootInterval: 1.8, bulletSpeed: 260, bulletDamage: 8 }
+};
+function pickEnemyType() {
+  const available = Object.keys(ENEMY_TYPES).filter(k => wave >= ENEMY_TYPES[k].minWave);
+  return available[Math.floor(Math.random() * available.length)];
+}
+function enemiesPerWave(w) { return Math.min(24, 4 + w * 2); }
+
+// ---------- Боссы ----------
+// Каждый следующий босс другой: цикл из 4 типов, дальше те же типы, но сильнее.
+const BOSS_DEFS = [
+  { name: 'Асанали аби', color: '#ff9f1c', shape: 'square',   attacks: ['grenade'] },
+  { name: 'Шухрат агай',   color: '#9b5de5', shape: 'circle',   attacks: ['jump'] },
+  { name: 'Айбар агай', color: '#00bbf9', shape: 'triangle', attacks: ['throw'] },
+  { name: 'Ахмет агай',     color: '#f15bb5', shape: 'diamond',  attacks: ['grenade', 'jump', 'throw'] }
+];
+const THROWS = [
+  { shape: 'square',   spd: 320, r: 7,  dmg: 6,  color: '#ff5566' },
+  { shape: 'triangle', spd: 220, r: 9,  dmg: 8,  color: '#ffd166' },
+  { shape: 'circle',   spd: 150, r: 16, dmg: 11, color: '#c77dff' }
+];
+const GRENADE_SPEED = 340;
+const SHARD_SPEED = 250;
+
+function spawnBoss() {
+  const n = wave / BOSS_EVERY - 1;
+  const def = BOSS_DEFS[n % BOSS_DEFS.length];
+  const hp = 130 + n * 80;
+  boss = {
+    skin: pickSkin(BOSS_SPRITES[n % BOSS_DEFS.length]),
+    def, n, hp, maxHp: hp, size: 56, speed: 75 + n * 6, atk: 1.2, jump: null, hitFlash: 0,
+    x: player.x < WORLD_W / 2 ? WORLD_W - 200 : 200,
+    y: player.y < WORLD_H / 2 ? WORLD_H - 200 : 200
+  };
+  const sp = pickBossSpawn(); // только зелёные зоны из map_mask2.png
+  if (sp) { boss.x = sp.x; boss.y = sp.y; }
+  else Object.assign(boss, findSpawnNear(boss.x, boss.y, 30)); // нет маски: как раньше
+  showToast('БОСС: ' + def.name + '!', false);
+  sfxBoom();
+}
+
+function bossAttack() {
+  const a = boss.def.attacks[Math.floor(Math.random() * boss.def.attacks.length)];
+  const ang = Math.atan2(player.y - boss.y, player.x - boss.x);
+  const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+  if (a === 'grenade') {
+    // гранаты целятся с упреждением: туда, где игрок окажется к моменту падения
+    const count = 1 + Math.floor(boss.n / 3);
+    const flight = dist / GRENADE_SPEED;
+    for (let i = 0; i < count; i++) {
+      const lead = flight * (0.4 + Math.random() * 0.5);
+      const tx = Math.max(40, Math.min(WORLD_W - 40, player.x + player.vx * lead));
+      const ty = Math.max(40, Math.min(WORLD_H - 40, player.y + player.vy * lead));
+      const aa = Math.atan2(ty - boss.y, tx - boss.x) + (i - (count - 1) / 2) * 0.28;
+      const td = Math.hypot(tx - boss.x, ty - boss.y);
+      enemyBullets.push({
+        x: boss.x, y: boss.y, vx: Math.cos(aa) * GRENADE_SPEED, vy: Math.sin(aa) * GRENADE_SPEED,
+        spd: GRENADE_SPEED, bomb: true, fuse: Math.max(200, Math.min(td, 800)), damage: 0, r: 0
+      });
+    }
+    sfxEnemyShot();
+  } else if (a === 'throw') {
+    // очень широкий веер (~160°), центр — с небольшим упреждением
+    const count = 14 + Math.floor(boss.n / 2);
+    const spread = Math.PI * 0.9;
+    const lead = dist / 300 * 0.6;
+    const cAng = Math.atan2(player.y + player.vy * lead - boss.y, player.x + player.vx * lead - boss.x);
+    for (let i = 0; i < count; i++) {
+      const t = THROWS[Math.floor(Math.random() * THROWS.length)];
+      const aa = cAng + (count > 1 ? i / (count - 1) - 0.5 : 0) * spread + (Math.random() - 0.5) * 0.12;
+      enemyBullets.push({
+        x: boss.x, y: boss.y, vx: Math.cos(aa) * t.spd, vy: Math.sin(aa) * t.spd,
+        damage: t.dmg, r: t.r, shape: t.shape, color: t.color
+      });
+    }
+    sfxEnemyShot();
+  } else if (a === 'jump') {
+    if (dist > BOSS_JUMP_RANGE * 1.6) return 'wait'; // игрок далеко: не прыгаем, а идём к нему
+    boss.jump = { t: 0, dur: 1.3, sx: boss.x, sy: boss.y, tx: boss.x, ty: boss.y,
+                  k: 0.8 + Math.random() * 0.25, jx: (Math.random() - 0.5) * 110, jy: (Math.random() - 0.5) * 110 };
+  }
+  return a;
+}
+
+// out — массив, куда складываются осколки. НЕ добавляем их прямо в enemyBullets:
+// взрыв вызывается из .filter() по этому же массиву, и всё добавленное внутрь терялось.
+function explodeBomb(b, out) {
+  const count = 12 + (boss ? boss.n * 2 : 0);
+  const off = Math.random() * Math.PI * 2;
+  for (let i = 0; i < count; i++) {
+    const a = off + (i / count) * Math.PI * 2;
+    out.push({
+      x: b.x, y: b.y, vx: Math.cos(a) * SHARD_SPEED, vy: Math.sin(a) * SHARD_SPEED,
+      damage: 7, r: 7, shape: 'diamond', color: '#ffb703'
+    });
+  }
+  if (Math.hypot(b.x - player.x, b.y - player.y) < 100) damagePlayer(10, 8);
+  spawnParticles(b.x, b.y, '#ffb703');
+  sfxBoom();
+}
+
+function updateBoss(dt) {
+  boss.hitFlash = Math.max(0, boss.hitFlash - dt);
+  if (boss.jump) {
+    const j = boss.jump;
+    const WINDUP = 0.5; // сколько босс "прицеливается" на земле
+    j.t += dt;
+    if (j.t < WINDUP) {
+      // на земле: цель ещё уточняется, но босс стоит на месте
+      const remain = j.dur - j.t;
+      let tx = Math.max(60, Math.min(WORLD_W - 60, player.x + player.vx * remain * j.k + j.jx));
+      let ty = Math.max(60, Math.min(WORLD_H - 60, player.y + player.vy * remain * j.k + j.jy));
+      const jdx = tx - j.sx, jdy = ty - j.sy, jd = Math.hypot(jdx, jdy);
+      if (jd > BOSS_JUMP_RANGE) { tx = j.sx + jdx / jd * BOSS_JUMP_RANGE; ty = j.sy + jdy / jd * BOSS_JUMP_RANGE; }
+      j.tx = tx; j.ty = ty;
+      j.p = 0;
+      return;
+    }
+    // в воздухе: цель зафиксирована, летит строго по прямой
+    const p = Math.min(1, (j.t - WINDUP) / (j.dur - WINDUP));
+    j.p = p;
+    boss.x = j.sx + (j.tx - j.sx) * p;
+    boss.y = j.sy + (j.ty - j.sy) * p;
+    if (p >= 1) {
+      // приземление → удар по площади + звуковая волна: чем дальше игрок, тем меньше урон
+      shockwaves.push({ x: boss.x, y: boss.y, r: 0, max: 400 + boss.n * 25, spd: 300, dmgBase: 5, dmgVar: 18, shake: 10, hit: false });
+      if (Math.hypot(player.x - boss.x, player.y - boss.y) < 60) damagePlayer(18, 12);
+      triggerShake(14);
+      sfxBoom();
+      Object.assign(boss, findFreeNear(boss.x, boss.y, BOSS_WALL_R));
+      boss.jump = null;
+      boss.atk = 2.2;
+    }
+    return;
+  }
+  const ang = Math.atan2(player.y - boss.y, player.x - boss.x);
+  const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+  if (dist > 200) {
+    const ox = boss.x, oy = boss.y;
+    const mAng = steerAngle(boss, ang);
+    boss.x += Math.cos(mAng) * boss.speed * dt;
+    boss.y += Math.sin(mAng) * boss.speed * dt;
+    resolveMove(boss, ox, oy, BOSS_WALL_R);
+  }
+  boss.atk -= dt;
+  if (boss.atk <= 0) {
+    const a = bossAttack();
+    if (a !== 'wait') bossVoice(); // голос босса при атаке
+    if (!boss.jump) boss.atk = a === 'wait' ? 0.4
+      : a === 'throw' ? Math.max(1.5, 2.4 - boss.n * 0.1)
+      : Math.max(1.8, 3.0 - boss.n * 0.12);
+  }
+  if (dist < boss.size / 2 + PLAYER_SIZE / 2) damagePlayer(CONTACT_DPS * 1.5 * dt, 3);
+}
+
+function killBoss() {
+  for (let i = 0; i < 6; i++) spawnParticles(boss.x, boss.y, boss.def.color);
+  player.guns = Math.min(MAX_GUNS, player.guns + 1);
+  heroIndex = Math.min(heroIndex + 1, HEROES.length - 1); // последний герой (Тимур агай) больше не сбрасывается
+  showLevelUp(HEROES[heroIndex].name);
+  pickups.push(makeCrate(boss.x, boss.y, true));
+  // очки за босса не начисляем: счёт зависит только от времени (так работает проверка лидерборда)
+  enemyBullets = [];
+  shockwaves = [];
+  triggerShake(16);
+  sfxDeath(); sfxBoom();
+  showToast(player.guns > 1 ? 'Босс повержен! Стволов: ' + player.guns : 'Босс повержен!', true);
+  boss = null;
+}
+
+// ---------- Урон игроку ----------
+function flashHurt(amount) {
+  hurtFlash = Math.min(HURT_FLASH_MAX, hurtFlash + 0.08 + amount * 0.012);
+  hurtFaceT = HURT_FACE_TIME;
+}
+function damagePlayer(amount, shake, silent) {
+  if (hasFx('shield')) return;
+  player.hp -= amount;
+  hurtFlag = true;
+  flashHurt(amount);
+  if (!silent) heroVoice(); // голос героя при получении урона
+  if (player.sprintCooldown <= 0) {
+    player.sprintTimer = SPRINT_DURATION;
+    player.sprintCooldown = SPRINT_COOLDOWN;
+  }
+  triggerShake(shake);
+}
+
+// ---------- Мир и камера ----------
+let WORLD_W, WORLD_H;
+let camera = { x: 0, y: 0 };
+
+function updateCamera() {
+  camera.x = Math.max(0, Math.min(WORLD_W - VW, player.x - VW / 2));
+  camera.y = Math.max(0, Math.min(WORLD_H - VH, player.y - VH / 2));
+}
+
+function resizeCanvas() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  // на телефоне меньшая сторона экрана ~400px → zoom ~0.67, камера видит дальше
+  zoom = Math.max(MIN_ZOOM, Math.min(1, Math.min(W, H) / VIEW_TARGET));
+  VW = W / zoom;
+  VH = H / zoom;
+  if (player && WORLD_W) {
+    player.x = Math.max(PLAYER_SIZE, Math.min(WORLD_W - PLAYER_SIZE, player.x));
+    player.y = Math.max(PLAYER_SIZE, Math.min(WORLD_H - PLAYER_SIZE, player.y));
+    updateCamera();
+  }
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', resizeCanvas);
+
+// Размер мира: по картинке карты (если есть), иначе стандартный. Минимум — чтобы мир был заметно больше экрана.
+function computeWorldSize() {
+  const minW = Math.max(2400, Math.round(VW * 1.8)), minH = Math.max(1800, Math.round(VH * 1.8));
+  if (mapState === 'ready') {
+    const nw = mapImg.naturalWidth, nh = mapImg.naturalHeight;
+    // для картинки достаточно, чтобы мир был не меньше 2400x1800 и чуть больше экрана
+    const needW = Math.max(2400, Math.round(VW * 1.2)), needH = Math.max(1800, Math.round(VH * 1.2));
+    mapScale = MAP_SCALE || Math.max(1, Math.ceil(Math.max(needW / nw, needH / nh)));
+    mapScale = Math.max(mapScale, Math.ceil(Math.max(VW / nw, VH / nh))); // мир никогда не меньше экрана
+    WORLD_W = nw * mapScale;
+    WORLD_H = nh * mapScale;
+  } else {
+    mapScale = 1;
+    WORLD_W = minW;
+    WORLD_H = minH;
+  }
+}
+
+function init() {
+  resizeCanvas();
+  switchTheme(currentTheme);
+  computeWorldSize();
+  buildNav();
+  player = { x: WORLD_W / 2, y: WORLD_H / 2, vx: 0, vy: 0, hp: 100, maxHp: 100, fireCooldown: 0, sprintTimer: 0, sprintCooldown: 0, guns: 1, fx: {} };
+  Object.assign(player, findFreeNear(player.x, player.y, 12));
+  bullets = []; enemyBullets = []; enemies = []; particles = []; shockwaves = [];
+  score = 0; runTime = 0; scoreSubmitted = false;
+  document.getElementById('submitStatus').textContent = '';
+  document.getElementById('retrySubmitBtn').style.display = 'none';
+  wave = 1; spawnTimer = 0;
+  waveTimer = waveTimeFor(1);
+  waveEnemiesTotal = enemiesPerWave(wave);
+  waveEnemiesSpawned = 0; waveBreakTimer = 0;
+  gameOver = false; paused = false; shakeIntensity = 0; hurtFlash = 0;
+  heroIndex = 0; hurtFaceT = 0; facing = 1;
+  heroVoiceCd = 0;
+  plane = null; pickups = []; boss = null;
+  updateCamera();
+  document.getElementById('gameover').style.display = 'none';
+  document.getElementById('pauseOverlay').style.display = 'none';
+  document.getElementById('settingsOverlay').style.display = 'none';
+}
+
+// ---------- Ввод ----------
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+let joystick = { active: false, id: null, baseX: 0, baseY: 0, knobX: 0, knobY: 0, dx: 0, dy: 0 };
+
+function touchPos(t) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (t.clientX - rect.left) * (W / rect.width), y: (t.clientY - rect.top) * (H / rect.height) };
+}
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  ensureAudio();
+  if (joystick.active) return;
+  const t = e.changedTouches[0];
+  const p = touchPos(t);
+  joystick.active = true;
+  joystick.id = t.identifier;
+  joystick.baseX = p.x; joystick.baseY = p.y;
+  joystick.knobX = p.x; joystick.knobY = p.y;
+  joystick.dx = 0; joystick.dy = 0;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!joystick.active) return;
+  let t = null;
+  for (const touch of e.changedTouches) {
+    if (touch.identifier === joystick.id) { t = touch; break; }
+  }
+  if (!t) return;
+  const p = touchPos(t);
+  let ddx = p.x - joystick.baseX;
+  let ddy = p.y - joystick.baseY;
+  const dist = Math.hypot(ddx, ddy);
+  if (dist > JOY_RADIUS) { ddx = ddx / dist * JOY_RADIUS; ddy = ddy / dist * JOY_RADIUS; }
+  joystick.knobX = joystick.baseX + ddx;
+  joystick.knobY = joystick.baseY + ddy;
+  joystick.dx = ddx / JOY_RADIUS;
+  joystick.dy = ddy / JOY_RADIUS;
+}, { passive: false });
+
+function endTouch(e) {
+  for (const touch of e.changedTouches) {
+    if (touch.identifier === joystick.id) { joystick.active = false; joystick.dx = 0; joystick.dy = 0; }
+  }
+}
+canvas.addEventListener('touchend', endTouch);
+canvas.addEventListener('touchcancel', endTouch);
+
+function restart() {
+  const loopStopped = gameOver; // цикл останавливается только после смерти; иначе не плодим второй
+  init();
+  lastTime = 0;
+  if (loopStopped) requestAnimationFrame(loop);
+}
+
+// ---------- Пауза и настройки ----------
+const pauseBtn = document.getElementById('pauseBtn');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const settingsOverlay = document.getElementById('settingsOverlay');
+
+function openPause() {
+  music.pause();
+  if (gameOver || !started) return;
+  paused = true;
+  pauseOverlay.style.display = 'flex';
+}
+function closePause() {
+  if (soundEnabled) music.play().catch(() => {});
+  paused = false;
+  pauseOverlay.style.display = 'none';
+}
+pauseBtn.addEventListener('click', () => { ensureAudio(); openPause(); });
+document.getElementById('resumeBtn').addEventListener('click', closePause);
+document.getElementById('restartFromPauseBtn').addEventListener('click', () => {
+  pauseOverlay.style.display = 'none';
+  restart();
+});
+document.getElementById('openSettingsBtn').addEventListener('click', () => {
+  pauseOverlay.style.display = 'none';
+  settingsOverlay.style.display = 'flex';
+});
+document.getElementById('backToPauseBtn').addEventListener('click', () => {
+  settingsOverlay.style.display = 'none';
+  pauseOverlay.style.display = 'flex';
+});
+const musicSlider = document.getElementById('musicSlider');
+const musicValue = document.getElementById('musicValue');
+const sfxSlider = document.getElementById('sfxSlider');
+const sfxValue = document.getElementById('sfxValue');
+const voiceSlider = document.getElementById('voiceSlider');
+const voiceValue = document.getElementById('voiceValue');
+const soundToggle = document.getElementById('soundToggle');
+
+function applyAudioSettings() {
+  music.volume = soundEnabled ? musicVolume : 0;
+  musicValue.textContent = Math.round(musicVolume * 100) + '%';
+  sfxValue.textContent = Math.round(sfxVolume * 100) + '%';
+  voiceValue.textContent = Math.round(voiceVolume * 100) + '%';
+
+  // Обновляем громкость уже загруженных голосовых записей.
+  for (const hero of HEROES) {
+    for (const audio of (hero.voiceSounds || [])) audio.volume = soundEnabled ? voiceVolume : 0;
+  }
+  for (const group of BOSS_VOICES) {
+    for (const audio of group) audio.volume = soundEnabled ? voiceVolume : 0;
+  }
+}
+
+function loadVolume(key, def) {
+  try {
+    const v = localStorage.getItem(key);
+    if (v === null) return def;
+    const n = Number(v);
+    return isNaN(n) ? def : Math.max(0, Math.min(1, n));
+  } catch (e) { return def; }
+}
+musicVolume = loadVolume('musicVolume', 0.3);
+sfxVolume = loadVolume('sfxVolume', 0.5);
+voiceVolume = loadVolume('voiceVolume', 0.5);
+musicSlider.value = Math.round(musicVolume * 100);
+sfxSlider.value = Math.round(sfxVolume * 100);
+voiceSlider.value = Math.round(voiceVolume * 100);
+applyAudioSettings();
+
+musicSlider.addEventListener('input', e => {
+  musicVolume = Number(e.target.value) / 100;
+  try { localStorage.setItem('musicVolume', String(musicVolume)); } catch (err) {}
+  applyAudioSettings();
+});
+sfxSlider.addEventListener('input', e => {
+  sfxVolume = Number(e.target.value) / 100;
+  try { localStorage.setItem('sfxVolume', String(sfxVolume)); } catch (err) {}
+  applyAudioSettings();
+});
+
+voiceSlider.addEventListener('input', e => {
+  voiceVolume = Number(e.target.value) / 100;
+  try { localStorage.setItem('voiceVolume', String(voiceVolume)); } catch (err) {}
+  applyAudioSettings();
+});
+
+soundToggle.addEventListener('change', e => {
+  soundEnabled = e.target.checked;
+  applyAudioSettings();
+
+  if (soundEnabled && started && !paused) {
+    music.play().catch(() => {});
+  } else {
+    music.pause();
+  }
+});
+  
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (settingsOverlay.style.display === 'flex') {
+      settingsOverlay.style.display = 'none';
+      pauseOverlay.style.display = 'flex';
+    } else if (paused) closePause();
+    else openPause();
+  }
+});
+
+// ---------- Самолёт со снабжением ----------
+function spawnPlane() {
+  const horizontal = Math.random() < 0.5;
+  let startX, startY, endX, endY;
+  const margin = 60;
+  if (horizontal) {
+    const y = margin + Math.random() * (WORLD_H - margin * 2);
+    const ltr = Math.random() < 0.5;
+    startX = ltr ? -margin : WORLD_W + margin;
+    endX = ltr ? WORLD_W + margin : -margin;
+    startY = y; endY = y;
+  } else {
+    const x = margin + Math.random() * (WORLD_W - margin * 2);
+    const ttb = Math.random() < 0.5;
+    startY = ttb ? -margin : WORLD_H + margin;
+    endY = ttb ? WORLD_H + margin : -margin;
+    startX = x; endX = x;
+  }
+  const dist = Math.hypot(endX - startX, endY - startY);
+  const dropProgress = 0.4 + Math.random() * 0.2;
+  plane = {
+    startX, startY, endX, endY, duration: dist / PLANE_SPEED,
+    elapsed: 0, x: startX, y: startY, dropProgress, dropped: false,
+    dropX: startX + (endX - startX) * dropProgress,
+    dropY: startY + (endY - startY) * dropProgress
+  };
+}
+
+// ---------- Спавн врагов ----------
+function spawnEnemy(forceType) {
+  const { x, y } = pickSpawnPoint();
+  const typeKey = forceType || pickEnemyType();
+  const type = ENEMY_TYPES[typeKey];
+  const hueBase = THEMES[currentTheme].enemyHueBase;
+  const speedFrac = Math.min(type.speedCap, type.speedFrac + (wave - 1) * ENEMY_SPEED_GROWTH);
+  enemies.push({
+    skin: pickSkin(ENEMY_SPRITES[typeKey]),
+    type: typeKey, x, y,
+    hp: type.hpBase + Math.floor(wave / 3),
+    speed: PLAYER_SPEED * speedFrac,
+    size: ENEMY_SIZE * type.sizeMult,
+    contactDps: CONTACT_DPS * type.contactDpsMult,
+    color: `hsl(${(hueBase + type.hueOffset - wave * 5 + 360) % 360}, 70%, 55%)`,
+    hitFlash: 0,
+    jump: null,
+    jumpCd: type.jumper ? 1 + Math.random() * type.jumpCd : 0,
+    fireTimer: type.ranged ? Math.random() * type.shootInterval : 0
+  });
+}
+
+// ---------- Обновление ----------
+function update(dt) {
+  if (gameOver) return;
+
+  runTime += dt;
+  score += (SCORE_BASE + (wave - 1) * SCORE_WAVE_GROWTH) * dt;
+  shakeIntensity = Math.max(0, shakeIntensity - SHAKE_DECAY * dt);
+  hurtFlag = false;
+  hurtFlash = Math.max(0, hurtFlash - dt * 0.7);
+  hurtFaceT = Math.max(0, hurtFaceT - dt);
+  heroVoiceCd = Math.max(0, heroVoiceCd - dt);
+  if (toastT > 0 && (toastT -= dt) <= 0) toastEl.style.opacity = 0;
+  for (const k in player.fx) player.fx[k] = Math.max(0, player.fx[k] - dt);
+
+  // --- движение ---
+  let dx = 0, dy = 0;
+  if (joystick.active) { dx = joystick.dx; dy = joystick.dy; }
+  else {
+    if (keys['w'] || keys['arrowup']) dy -= 1;
+    if (keys['s'] || keys['arrowdown']) dy += 1;
+    if (keys['a'] || keys['arrowleft']) dx -= 1;
+    if (keys['d'] || keys['arrowright']) dx += 1;
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len; dy /= len;
+  }
+  if (hasFx('invert')) { dx = -dx; dy = -dy; }
+  player.sprintTimer = Math.max(0, player.sprintTimer - dt);
+  player.sprintCooldown = Math.max(0, player.sprintCooldown - dt);
+  const speedMult = (player.sprintTimer > 0 ? SPRINT_MULT : 1) * (hasFx('speed_up') ? 1.35 : 1) * (hasFx('speed_down') ? 0.65 : 1);
+
+  player.vx = dx * PLAYER_SPEED * speedMult; // скорость нужна боссу для упреждения гранат
+  player.vy = dy * PLAYER_SPEED * speedMult;
+  if (Math.abs(player.vx) > 20) facing = player.vx < 0 ? -1 : 1; // куда смотрит герой
+  const steps = Math.ceil(Math.hypot(player.vx, player.vy) * dt / 6) || 1;
+  for (let i = 0; i < steps; i++) {
+    const ox = player.x, oy = player.y;
+    player.x += player.vx * dt / steps;
+    player.y += player.vy * dt / steps;
+    resolveMove(player, ox, oy, 9);
+  }
+  player.x = Math.max(PLAYER_SIZE, Math.min(WORLD_W - PLAYER_SIZE, player.x));
+  player.y = Math.max(PLAYER_SIZE, Math.min(WORLD_H - PLAYER_SIZE, player.y));
+  updateCamera();
+
+  // --- автострельба (враги + босс) в пределах AUTO_RANGE, по player.guns стволов ---
+  player.fireCooldown -= dt;
+  const allTargets = boss ? enemies.concat([boss]) : enemies;
+  let nearest = null, nd = AUTO_RANGE;
+  for (const e of allTargets) {
+    const d = Math.hypot(e.x - player.x, e.y - player.y);
+    if (d < nd && clearShot(player.x, player.y, e.x, e.y)) { nd = d; nearest = e; }
+  }
+  if (player.fireCooldown <= 0 && nearest) {
+    const angle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+    const px = -Math.sin(angle), py = Math.cos(angle);
+    const dmg = hasFx('dmg_up') ? 2 : 1;
+    for (let i = 0; i < player.guns; i++) {
+      const o = (i - (player.guns - 1) / 2) * 12;
+      bullets.push({
+        x: player.x + px * o, y: player.y + py * o,
+        vx: Math.cos(angle) * BULLET_SPEED, vy: Math.sin(angle) * BULLET_SPEED, dmg
+      });
+    }
+    player.fireCooldown = FIRE_RATE * (hasFx('rate_up') ? 0.6 : 1) * (hasFx('rate_down') ? 1.7 : 1);
+    sfxShoot();
+  }
+
+  bullets = bullets.filter(b => {
+    const px = b.x, py = b.y;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (isBlocked(b.x, b.y) || isBlocked((px + b.x) / 2, (py + b.y) / 2)) return false; // упёрлась в стену
+    return b.x > -10 && b.x < WORLD_W + 10 && b.y > -10 && b.y < WORLD_H + 10;
+  });
+
+  // --- враги ---
+  updateFlow(dt);
+  const rage = hasFx('rage') ? 1.4 : 1;
+  for (const e of enemies) {
+    const type = ENEMY_TYPES[e.type];
+    const ox = e.x, oy = e.y;
+    e.hitFlash = Math.max(0, e.hitFlash - dt);
+    const angle = Math.atan2(player.y - e.y, player.x - e.x); // прямой угол: для стрельбы
+    const dist = Math.hypot(player.x - e.x, player.y - e.y);
+    const sp = e.speed * rage;
+    const mAngle = e.jump ? angle : steerAngle(e, angle);     // угол движения: в обход стен
+    if (type.ranged) {
+      if (dist > type.shootRange * 0.85) { e.x += Math.cos(mAngle) * sp * dt; e.y += Math.sin(mAngle) * sp * dt; }
+      else if (dist < type.shootRange * 0.5) { e.x -= Math.cos(angle) * sp * dt; e.y -= Math.sin(angle) * sp * dt; }
+      e.fireTimer -= dt;
+      if (e.fireTimer <= 0 && dist < type.shootRange) {
+        enemyBullets.push({
+          x: e.x, y: e.y, vx: Math.cos(angle) * type.bulletSpeed, vy: Math.sin(angle) * type.bulletSpeed,
+          damage: type.bulletDamage
+        });
+        e.fireTimer = type.shootInterval;
+        sfxEnemyShot();
+      }
+    } else if (type.jumper) {
+      if (e.jump) {
+        const j = e.jump;
+        j.t += dt;
+        const p = Math.min(1, j.t / j.dur);
+        e.x = j.sx + (j.tx - j.sx) * p;
+        e.y = j.sy + (j.ty - j.sy) * p;
+        if (p >= 1) { // приземление → мини-волна (чем дальше игрок, тем слабее)
+          shockwaves.push({ x: e.x, y: e.y, r: 0, max: type.waveMax, spd: 300, dmgBase: type.waveDmgBase, dmgVar: type.waveDmgVar, shake: 5, hit: false });
+          triggerShake(5);
+          beep(80, 0.2, 'sawtooth', 0.08);
+          Object.assign(e, findFreeNear(e.x, e.y, e.size * 0.4));
+          e.jump = null;
+          e.jumpCd = type.jumpCd * (0.8 + Math.random() * 0.4);
+        }
+      } else {
+        if (dist > 70) { e.x += Math.cos(mAngle) * sp * dt; e.y += Math.sin(mAngle) * sp * dt; }
+        e.jumpCd -= dt;
+        if (e.jumpCd <= 0 && dist < type.jumpRange) {
+          const oa = Math.random() * Math.PI * 2, od = 70 + Math.random() * 40;
+          e.jump = {
+            t: 0, dur: type.jumpDur, sx: e.x, sy: e.y,
+            tx: Math.max(40, Math.min(WORLD_W - 40, player.x + Math.cos(oa) * od)),
+            ty: Math.max(40, Math.min(WORLD_H - 40, player.y + Math.sin(oa) * od))
+          };
+        }
+      }
+    } else {
+      e.x += Math.cos(mAngle) * sp * dt;
+      e.y += Math.sin(mAngle) * sp * dt;
+    }
+    if (!e.jump) resolveMove(e, ox, oy, e.size * 0.4);
+  }
+
+  // Стрелки держат дистанцию друг от друга и не собираются в одну точку.
+  const shooters = enemies.filter(e => e.type === 'shooter' && !e.jump);
+  for (let i = 0; i < shooters.length; i++) {
+    for (let j = i + 1; j < shooters.length; j++) {
+      const a = shooters[i], b = shooters[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let dist = Math.hypot(dx, dy);
+      const minDist = Math.max(a.size, b.size) * 1.15;
+      if (dist >= minDist) continue;
+      if (dist < 0.001) {
+        const angle = Math.random() * Math.PI * 2;
+        dx = Math.cos(angle); dy = Math.sin(angle); dist = 1;
+      }
+      const push = (minDist - dist) * 0.5;
+      const ax = a.x, ay = a.y, bx = b.x, by = b.y;
+      a.x -= dx / dist * push;
+      a.y -= dy / dist * push;
+      b.x += dx / dist * push;
+      b.y += dy / dist * push;
+      resolveMove(a, ax, ay, a.size * 0.4);
+      resolveMove(b, bx, by, b.size * 0.4);
+    }
+  }
+
+  // --- босс ---
+  if (boss) updateBoss(dt);
+
+  // --- пули врагов и бомбы (осколки собираем отдельно и добавляем ПОСЛЕ фильтра) ---
+  const newShards = [];
+  enemyBullets = enemyBullets.filter(b => {
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.bomb) {
+      b.fuse -= b.spd * dt;
+      if (b.fuse <= 0 || Math.hypot(b.x - player.x, b.y - player.y) < 60) { explodeBomb(b, newShards); return false; }
+      return true;
+    }
+    if (isBlocked(b.x, b.y)) return false; // пули врагов не проходят сквозь стены
+    if (Math.hypot(b.x - player.x, b.y - player.y) < PLAYER_SIZE / 2 + (b.r || 4)) {
+      damagePlayer(b.damage, 8);
+      return false;
+    }
+    return b.x > -20 && b.x < WORLD_W + 20 && b.y > -20 && b.y < WORLD_H + 20;
+  });
+  if (newShards.length) enemyBullets = enemyBullets.concat(newShards);
+
+  // --- звуковые волны босса ---
+  shockwaves = shockwaves.filter(s => {
+    s.r += (s.spd || 340) * dt;
+    const d = Math.hypot(player.x - s.x, player.y - s.y);
+    if (!s.hit && s.r >= d && d <= s.max) {
+      s.hit = true;
+      // чем дальше игрок от центра, тем меньше урон
+      damagePlayer(s.dmgBase + s.dmgVar * (1 - d / s.max), s.shake || 10);
+    }
+    return s.r < s.max;
+  });
+
+  // --- пули игрока → враги ---
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      const b = bullets[j];
+      if (Math.hypot(e.x - b.x, e.y - b.y) < e.size / 2 + 4) {
+        bullets.splice(j, 1);
+        e.hp -= b.dmg || 1;
+        e.hitFlash = HIT_FLASH_DURATION;
+        spawnParticles(e.x, e.y, e.color);
+        sfxHit();
+        if (e.hp <= 0) {
+          if (Math.random() < RARE_DROP_CHANCE) pickups.push(makeRareCrate(e.x, e.y));
+          else if (Math.random() < ENEMY_DROP_CHANCE) pickups.push(makeCrate(e.x, e.y));
+          enemies.splice(i, 1);
+          sfxDeath();
+        }
+        break;
+      }
+    }
+  }
+
+  // --- пули игрока → босс ---
+  if (boss) {
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      const b = bullets[j];
+      if (Math.hypot(boss.x - b.x, boss.y - b.y) < boss.size / 2 + 4) {
+        bullets.splice(j, 1);
+        boss.hp -= b.dmg || 1;
+        boss.hitFlash = HIT_FLASH_DURATION;
+        spawnParticles(boss.x, boss.y, boss.def.color);
+        sfxHit();
+        if (boss.hp <= 0) { killBoss(); break; }
+      }
+    }
+  }
+
+  // --- контакт враг-игрок ---
+  for (const e of enemies) {
+    if (e.jump) continue; // в воздухе контактного урона нет
+    if (Math.hypot(e.x - player.x, e.y - player.y) < e.size / 2 + PLAYER_SIZE / 2) {
+      damagePlayer(e.contactDps * dt, 3);
+    }
+  }
+
+  if (hurtFlag) {
+    if (!update.dmgCooldown || update.dmgCooldown <= 0) {
+      sfxDamage();
+      update.dmgCooldown = DAMAGE_SOUND_COOLDOWN;
+    }
+  }
+  update.dmgCooldown = Math.max(0, (update.dmgCooldown || 0) - dt);
+
+  if (player.hp <= 0) {
+    gameOver = true;
+    document.getElementById('finalScore').textContent = Math.floor(score);
+    document.getElementById('finalWave').textContent = wave;
+    document.getElementById('gameover').style.display = 'block';
+    submitScore();
+  }
+
+  particles = particles.filter(p => {
+    p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.life -= dt;
+    return p.life > 0;
+  });
+
+  // --- волны: следующая начинается, когда текущая зачищена ИЛИ вышел таймер ---
+  if (waveBreakTimer <= 0) {
+    waveTimer -= dt;
+    if (waveTimer <= 0) nextWave(true);
+  }
+  if (waveBreakTimer > 0) {
+    waveBreakTimer -= dt;
+  } else if (waveEnemiesSpawned < waveEnemiesTotal) {
+    spawnTimer += dt;
+    const spawnInterval = Math.max(0.25, 1 - wave * 0.05);
+    if (spawnTimer > spawnInterval && enemies.length < MAX_ENEMIES) {
+      spawnEnemy(wave % BOSS_EVERY === 0 ? (Math.random() < 0.7 ? 'chaser' : 'runner') : undefined);
+      waveEnemiesSpawned++;
+      spawnTimer = 0;
+    }
+  } else if (enemies.length === 0 && !boss) {
+    nextWave(false);
+  }
+
+  // --- самолёт: всегда сбрасывает аптечку ---
+  if (plane) {
+    plane.elapsed += dt;
+    const progress = plane.elapsed / plane.duration;
+    plane.x = plane.startX + (plane.endX - plane.startX) * progress;
+    plane.y = plane.startY + (plane.endY - plane.startY) * progress;
+    if (!plane.dropped && progress >= plane.dropProgress) {
+      plane.dropped = true;
+      const f = findFreeNear(plane.dropX, plane.dropY, 14);
+      pickups.push(makeMedkit(f.x, f.y));
+    }
+    if (progress >= 1) plane = null;
+  }
+
+  // --- ящики: покачивание, исчезновение через CRATE_LIFE секунд, подбор ---
+  for (const p of pickups) { p.bobPhase += dt * 3; p.life -= dt; }
+  pickups = pickups.filter(p => {
+    if (p.life <= 0) return false;
+    if (Math.hypot(p.x - player.x, p.y - player.y) < CRATE_SIZE / 2 + PLAYER_SIZE / 2) {
+      collectPickup(p);
+      return false;
+    }
+    return true;
+  });
+
+  // --- UI ---
+  document.getElementById('hp').textContent = Math.max(0, Math.ceil(player.hp));
+  document.getElementById('score').textContent = Math.floor(score);
+  document.getElementById('wave').textContent = wave;
+  const wt = document.getElementById('wtimer');
+  wt.textContent = Math.max(0, Math.ceil(waveTimer));
+  wt.style.color = waveTimer < 10 ? '#ff6b81' : '';
+  document.getElementById('remaining').textContent = boss ? 'БОСС' : (waveEnemiesTotal - waveEnemiesSpawned) + enemies.length;
+  let fxHtml = '';
+  for (const d of GOOD.concat(BAD)) {
+    const t = player.fx[d.id];
+    if (t > 0) fxHtml += `<div style="color:${GOOD.includes(d) ? '#7CFC00' : '#ff6b81'}">${d.label} ${Math.ceil(t)}с</div>`;
+  }
+  if (fxHtml !== lastFxHtml) { document.getElementById('fx').innerHTML = fxHtml; lastFxHtml = fxHtml; }
+}
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 5; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 2 + 1;
+    particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: PARTICLE_LIFE, color });
+  }
+}
+
+// ---------- Отрисовка ----------
+function drawShape(shape, x, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.save();
+  ctx.translate(x, y);
+  if (shape === 'diamond') {
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+  } else if (shape === 'circle') {
+    ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.fill();
+  } else if (shape === 'triangle') {
+    ctx.beginPath(); ctx.moveTo(0, -s / 2); ctx.lineTo(s / 2, s / 2); ctx.lineTo(-s / 2, s / 2); ctx.closePath(); ctx.fill();
+  } else {
+    ctx.fillRect(-s / 2, -s / 2, s, s);
+  }
+  ctx.restore();
+}
+
+// рисует спрайт моба/босса по центру (x, y); flash — осветление при попадании;
+// faceRight === false — зеркалить; false в ответе — картинки нет (тогда рисуется старая фигура)
+function drawSprite(s, x, y, flash, faceRight) {
+  if (!s || !s.ok) return false;
+  const fw = s.img.naturalWidth / s.cols, fh = s.img.naturalHeight / s.rows;
+  const frames = s.cols * s.rows;
+  const f = frames > 1 ? Math.floor(performance.now() / 1000 * s.fps) % frames : 0;
+  const w = s.draw, h = s.draw * fh / fw;
+  ctx.save();
+  ctx.translate(x, y);
+  if (faceRight === false) ctx.scale(-1, 1);
+  ctx.imageSmoothingEnabled = false;
+  if (flash) ctx.filter = 'brightness(3)';
+  ctx.drawImage(s.img, (f % s.cols) * fw, Math.floor(f / s.cols) * fh, fw, fh, -w / 2, -h / 2, w, h);
+  ctx.restore();
+  return true;
+}
+
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const shakeX = shakeIntensity > 0 ? (Math.random() - 0.5) * shakeIntensity : 0;
+  const shakeY = shakeIntensity > 0 ? (Math.random() - 0.5) * shakeIntensity : 0;
+
+  ctx.save();
+  ctx.scale(zoom, zoom);
+  ctx.translate(-camera.x + shakeX, -camera.y + shakeY);
+
+  if (mapState === 'ready') {
+    const eff = zoom * mapScale; // сколько экранных пикселей на один пиксель картинки
+    ctx.imageSmoothingEnabled = Math.abs(eff - Math.round(eff)) > 0.02; // чёткие пиксели, если масштаб целый
+    ctx.drawImage(mapImg, camera.x / mapScale, camera.y / mapScale, VW / mapScale, VH / mapScale, camera.x, camera.y, VW, VH);
+    if (DEBUG_BLOCKS) { // подсветка стен рисуется ПОВЕРХ карты
+      ctx.globalAlpha = 0.4;
+      if (maskState === 'ready') ctx.drawImage(maskImg, 0, 0, WORLD_W, WORLD_H);
+      ctx.fillStyle = '#f00';
+      for (const [rx, ry, rw, rh] of BLOCK_RECTS) ctx.fillRect(rx * mapScale, ry * mapScale, rw * mapScale, rh * mapScale);
+      ctx.globalAlpha = 1;
+    }
+  } else {
+    ctx.strokeStyle = THEMES[currentTheme].gridColor;
+    ctx.lineWidth = 1;
+    const gridStartX = Math.floor(camera.x / 40) * 40;
+    const gridStartY = Math.floor(camera.y / 40) * 40;
+    for (let x = gridStartX; x < camera.x + VW; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, camera.y); ctx.lineTo(x, camera.y + VH); ctx.stroke();
+    }
+    for (let y = gridStartY; y < camera.y + VH; y += 40) {
+      ctx.beginPath(); ctx.moveTo(camera.x, y); ctx.lineTo(camera.x + VW, y); ctx.stroke();
+    }
+    // красная рамка по краю мира — только пока нет картинки карты
+    ctx.strokeStyle = THEMES[currentTheme].wallColor;
+    ctx.lineWidth = WALL_THICKNESS;
+    ctx.strokeRect(WALL_THICKNESS / 2, WALL_THICKNESS / 2, WORLD_W - WALL_THICKNESS, WORLD_H - WALL_THICKNESS);
+  }
+  if (DEBUG_SPAWN_ZONES && spawnMaskState === 'ready') { // запретные для спавна зоны поверх карты
+    ctx.globalAlpha = 0.45;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(spawnMaskImg, 0, 0, WORLD_W, WORLD_H);
+    ctx.globalAlpha = 1;
+  }
+  if (DEBUG_BOSS_ZONES && bossMaskState === 'ready') { // зелёные зоны босса подсвечиваются поверх карты
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.6;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(bossMaskImg, 0, 0, WORLD_W, WORLD_H);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // звуковые волны
+  for (const s of shockwaves) {
+    ctx.strokeStyle = `rgba(255,217,61,${Math.max(0.2, 1 - s.r / s.max)})`;
+    ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  for (const p of particles) { ctx.fillStyle = p.color; ctx.fillRect(p.x - 2, p.y - 2, 4, 4); }
+
+  // пули игрока: тёмно-синие со светлой окантовкой
+  ctx.fillStyle = BULLET_COLOR;
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1;
+  for (const b of bullets) { ctx.fillRect(b.x - 3, b.y - 3, 6, 6); ctx.strokeRect(b.x - 3, b.y - 3, 6, 6); }
+
+  // пули врагов / бомбы / осколки
+  for (const b of enemyBullets) {
+    if (b.bomb) {
+      ctx.fillStyle = '#222';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = Math.floor(performance.now() / 120) % 2 ? '#ff5566' : '#ffb703';
+      ctx.lineWidth = 3; ctx.stroke();
+    } else {
+      drawShape(b.shape || 'square', b.x, b.y, (b.r || 4) * 2, b.color || '#ff5566');
+    }
+  }
+
+  // ящики: из врагов — жёлтый "?", с самолёта — зелёная аптечка "+"; в последние 5 секунд мигают
+  for (const p of pickups) {
+    if (p.life < 5 && Math.floor(p.life * 6) % 2 === 0) continue;
+    const bob = Math.sin(p.bobPhase) * 4;
+    ctx.save();
+    ctx.translate(p.x, p.y + bob);
+    if (p.rare) {
+      const pulse = 1 + Math.sin(p.bobPhase * 2.5) * 0.12;
+      const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 42 * pulse);
+      glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+      glow.addColorStop(0.25, 'rgba(255,245,150,0.75)');
+      glow.addColorStop(1, 'rgba(255,210,40,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(0, 0, 42 * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.save();
+      ctx.rotate(Math.PI / 4);
+      ctx.shadowColor = '#fff4a3';
+      ctx.shadowBlur = 38;
+      const size = 23 * pulse;
+      const grad = ctx.createLinearGradient(-size, -size, size, size);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.45, '#fff7a8');
+      grad.addColorStop(1, '#ffb700');
+      ctx.fillStyle = grad;
+      ctx.fillRect(-size / 2, -size / 2, size, size);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-size / 2, -size / 2, size, size);
+      ctx.restore();
+      ctx.restore();
+      continue;
+    }
+    if (p.known && medkitReady) {
+      ctx.imageSmoothingEnabled = false; // чтобы пиксель-арт не размывался
+      const fw = medkitImg.naturalWidth / MEDKIT_COLS, fh = medkitImg.naturalHeight / MEDKIT_ROWS;
+      const f = Math.floor(performance.now() / 1000 * MEDKIT_FPS) % (MEDKIT_COLS * MEDKIT_ROWS);
+      const w = MEDKIT_DRAW_SIZE, h = MEDKIT_DRAW_SIZE * fh / fw;
+      ctx.drawImage(medkitImg, (f % MEDKIT_COLS) * fw, Math.floor(f / MEDKIT_COLS) * fh, fw, fh, -w / 2, -h / 2, w, h);
+      ctx.restore();
+      continue;
+    }
+    ctx.fillStyle = p.known ? '#7CFC00' : '#ffd93d';
+    ctx.fillRect(-CRATE_SIZE / 2, -CRATE_SIZE / 2, CRATE_SIZE, CRATE_SIZE);
+    ctx.strokeStyle = '#0d1117'; ctx.lineWidth = 2;
+    ctx.strokeRect(-CRATE_SIZE / 2, -CRATE_SIZE / 2, CRATE_SIZE, CRATE_SIZE);
+    ctx.fillStyle = '#0d1117';
+    ctx.font = 'bold 18px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(p.known ? '+' : '?', 0, 1);
+    ctx.restore();
+  }
+
+  for (const e of enemies) {
+    let lift = 0;
+    if (e.jump) { // прыгающий жирный моб: тень на земле, слабый круг на месте приземления
+      lift = Math.sin(Math.PI * Math.min(1, e.jump.t / e.jump.dur)) * 40;
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath(); ctx.ellipse(e.x, e.y, e.size / 2, e.size / 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,80,80,0.35)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(e.jump.tx, e.jump.ty, 26, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (!drawSprite(ENEMY_SPRITES[e.type][e.skin], e.x, e.y - lift, e.hitFlash > 0, e.x < player.x))
+      drawShape(ENEMY_TYPES[e.type].shape, e.x, e.y - lift, e.size, e.hitFlash > 0 ? '#ffffff' : e.color);
+  }
+
+  // босс (при прыжке — тень на земле + тело, подброшенное вверх только в полёте)
+  if (boss) {
+    let lift = 0;
+    if (boss.jump) {
+      lift = Math.sin(Math.PI * (boss.jump.p || 0)) * 90;
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath(); ctx.ellipse(boss.x, boss.y, boss.size / 2, boss.size / 4, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    if (!drawSprite(BOSS_SPRITES[boss.n % BOSS_DEFS.length][boss.skin], boss.x, boss.y - lift, boss.hitFlash > 0, boss.x < player.x)) {
+      drawShape(boss.def.shape, boss.x, boss.y - lift, boss.size, boss.hitFlash > 0 ? '#ffffff' : boss.def.color);
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(boss.x - 12, boss.y - lift - 6, 7, 7);
+      ctx.fillRect(boss.x + 5, boss.y - lift - 6, 7, 7);
+    }
+  }
+
+  if (plane) {
+    // тень на земле
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(plane.x, plane.y + 14, 28, 12, 0, 0, Math.PI * 2); ctx.fill();
+
+    const heading = Math.atan2(plane.endY - plane.startY, plane.endX - plane.startX);
+    if (planeSprite.ok) {
+      // летит влево — зеркалим, чтобы птичка не оказалась вверх ногами
+      const cosH = Math.cos(heading);
+      const flip = cosH < -0.01;
+      const a = flip ? Math.atan2(Math.sin(heading), -cosH) : heading;
+      const w = PLANE_DRAW_SIZE, h = PLANE_DRAW_SIZE * planeSprite.img.naturalHeight / planeSprite.img.naturalWidth;
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      if (flip) ctx.scale(-1, 1);
+      ctx.rotate(a - BIRD_BASE_ANGLE);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(planeSprite.img, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    } else {
+      // запасной вариант: старый самолётик, если картинка не загрузилась
+      ctx.save();
+      ctx.translate(plane.x, plane.y);
+      ctx.rotate(heading);
+      ctx.fillStyle = '#cccccc';
+      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-16, -10); ctx.lineTo(-8, 0); ctx.lineTo(-16, 10); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // игрок: герой-моделька, а если картинки не загрузились — кубик
+  if (!drawHero()) {
+    ctx.fillStyle = THEMES[currentTheme].playerColor;
+    ctx.fillRect(player.x - PLAYER_SIZE / 2, player.y - PLAYER_SIZE / 2, PLAYER_SIZE, PLAYER_SIZE);
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(player.x - 6, player.y - 4, 3, 3);
+    ctx.fillRect(player.x + 3, player.y - 4, 3, 3);
+  }
+  if (hasFx('shield')) {
+    ctx.strokeStyle = 'rgba(80,200,255,0.8)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  // полоса HP босса (экранные координаты)
+  if (boss) {
+    const bw = Math.min(W * 0.7, 420), bx = (W - bw) / 2, by = 64;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(bx - 2, by - 2, bw + 4, 16);
+    ctx.fillStyle = boss.def.color; ctx.fillRect(bx, by, bw * Math.max(0, boss.hp / boss.maxHp), 12);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(boss.def.name, W / 2, by - 6);
+  }
+
+  // стрелки на краю экрана: откуда стреляют дальнобойные враги, которых не видно
+  for (const e of enemies) {
+    const t = ENEMY_TYPES[e.type];
+    if (!t.ranged || Math.hypot(e.x - player.x, e.y - player.y) > t.shootRange * 1.1) continue;
+    const sx = (e.x - camera.x) * zoom, sy = (e.y - camera.y) * zoom;
+    if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue;
+    const cx = W / 2, cy = H / 2, ddx = sx - cx, ddy = sy - cy, m = 24;
+    const k = Math.min((cx - m) / (Math.abs(ddx) || 1e-6), (cy - m) / (Math.abs(ddy) || 1e-6));
+    ctx.save();
+    ctx.translate(cx + ddx * k, cy + ddy * k);
+    ctx.rotate(Math.atan2(ddy, ddx));
+    ctx.fillStyle = 'rgba(255,85,102,0.85)';
+    ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -8); ctx.lineTo(-8, 8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // красная вспышка при получении урона
+  if (hurtFlash > 0.005) {
+    ctx.fillStyle = 'rgba(255,0,0,' + hurtFlash.toFixed(3) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // джойстик
+  if (joystick.active) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(joystick.baseX, joystick.baseY, JOY_RADIUS, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(joystick.knobX, joystick.knobY, 22, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function loop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  let dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  dt = Math.min(dt, 0.05);
+
+  if (!paused && started) update(dt);
+  draw();
+  if (!gameOver) requestAnimationFrame(loop);
+}
+
+init();
+requestAnimationFrame(loop);
+
+
+// ===== CHEAT MENU (same script scope as game) =====
+var __cheat = {
+  god: false, infHp: false, infGuns: false, speed: false, rate: false, dmg: false,
+  _dmgHooked: false
+};
+
+function __cheatRefresh() {
+  var on = [];
+  if (__cheat.god) on.push('god');
+  if (__cheat.infHp) on.push('∞hp');
+  if (__cheat.infGuns) on.push('guns');
+  if (__cheat.speed) on.push('spd');
+  if (__cheat.rate) on.push('rate');
+  if (__cheat.dmg) on.push('dmg');
+  var el = document.getElementById('cheatStatus');
+  if (el) el.textContent = on.length ? ('ON: ' + on.join(', ')) : 'Выкл';
+}
+function __cheatBtn(id, on) {
+  var b = document.getElementById(id);
+  if (b) b.classList.toggle('on', !!on);
+}
+function __cheatNeed() {
+  if (typeof started !== 'undefined' && !started) {
+    document.getElementById('cheatStatus').textContent = 'Сначала начни игру';
+    return false;
+  }
+  if (typeof player === 'undefined' || !player) {
+    document.getElementById('cheatStatus').textContent = 'Игрок ещё не создан';
+    return false;
+  }
+  return true;
+}
+function __cheatHookDamage() {
+  if (__cheat._dmgHooked) return;
+  if (typeof damagePlayer !== 'function') return;
+  __cheat._dmgHooked = true;
+  var _orig = damagePlayer;
+  damagePlayer = function(amount, shake, silent) {
+    if (__cheat.god || __cheat.infHp) return;
+    return _orig.apply(this, arguments);
+  };
+}
+
+document.getElementById('cheatToggle').addEventListener('click', function() {
+  var p = document.getElementById('cheatPanel');
+  p.style.display = p.style.display === 'block' ? 'none' : 'block';
+});
+
+document.getElementById('chGod').onclick = function() {
+  __cheat.god = !__cheat.god; __cheatBtn('chGod', __cheat.god); __cheatRefresh();
+};
+document.getElementById('chInfHp').onclick = function() {
+  __cheat.infHp = !__cheat.infHp; __cheatBtn('chInfHp', __cheat.infHp); __cheatRefresh();
+};
+document.getElementById('chInfGuns').onclick = function() {
+  __cheat.infGuns = !__cheat.infGuns;
+  if (__cheat.infGuns && typeof player !== 'undefined' && player) player.guns = 4;
+  __cheatBtn('chInfGuns', __cheat.infGuns); __cheatRefresh();
+};
+document.getElementById('chMaxGuns').onclick = function() {
+  if (!__cheatNeed()) return;
+  player.guns = Math.min((player.guns || 1) + 1, 8);
+  document.getElementById('cheatStatus').textContent = 'Стволов: ' + player.guns;
+};
+document.getElementById('chSpeed').onclick = function() {
+  __cheat.speed = !__cheat.speed; __cheatBtn('chSpeed', __cheat.speed); __cheatRefresh();
+};
+document.getElementById('chRate').onclick = function() {
+  __cheat.rate = !__cheat.rate; __cheatBtn('chRate', __cheat.rate); __cheatRefresh();
+};
+document.getElementById('chDmg').onclick = function() {
+  __cheat.dmg = !__cheat.dmg; __cheatBtn('chDmg', __cheat.dmg); __cheatRefresh();
+};
+document.getElementById('chShield').onclick = function() {
+  if (!__cheatNeed()) return;
+  if (!player.fx) player.fx = {};
+  player.fx.shield = 60;
+  document.getElementById('cheatStatus').textContent = 'Щит 60с';
+};
+document.getElementById('chHeal').onclick = function() {
+  if (!__cheatNeed()) return;
+  player.hp = player.maxHp || 100;
+  document.getElementById('cheatStatus').textContent = 'HP полное';
+};
+document.getElementById('chScore').onclick = function() {
+  if (typeof score === 'undefined') return;
+  score += 10000;
+  document.getElementById('cheatStatus').textContent = 'Счёт → ' + Math.floor(score);
+};
+document.getElementById('chWave').onclick = function() {
+  if (typeof nextWave !== 'function') return;
+  if (typeof enemies !== 'undefined') enemies.length = 0;
+  if (typeof boss !== 'undefined') boss = null;
+  nextWave(false);
+  document.getElementById('cheatStatus').textContent = 'Волна ' + wave;
+};
+document.getElementById('chBoss').onclick = function() {
+  if (typeof spawnBoss !== 'function') {
+    document.getElementById('cheatStatus').textContent = 'spawnBoss нет';
+    return;
+  }
+  if (boss) { document.getElementById('cheatStatus').textContent = 'Босс уже есть'; return; }
+  spawnBoss();
+  document.getElementById('cheatStatus').textContent = 'Босс заспавнен';
+};
+document.getElementById('chKill').onclick = function() {
+  if (typeof enemies !== 'undefined') {
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (typeof spawnParticles === 'function') spawnParticles(e.x, e.y, e.color || '#fff');
+    }
+    enemies.length = 0;
+  }
+  if (typeof boss !== 'undefined' && boss) {
+    if (typeof killBoss === 'function') { boss.hp = 0; killBoss(); }
+    else boss.hp = 0;
+  }
+  document.getElementById('cheatStatus').textContent = 'Все убиты';
+};
+document.getElementById('chClearEB').onclick = function() {
+  if (typeof enemyBullets !== 'undefined') enemyBullets.length = 0;
+  if (typeof shockwaves !== 'undefined') shockwaves.length = 0;
+  document.getElementById('cheatStatus').textContent = 'Пули очищены';
+};
+
+// continuous tick
+setInterval(function() {
+  __cheatHookDamage();
+  if (typeof player === 'undefined' || !player) return;
+  if (__cheat.infHp || __cheat.god) player.hp = player.maxHp || 100;
+  if (__cheat.infGuns) player.guns = Math.max(player.guns || 1, 4);
+  if (!player.fx) player.fx = {};
+  if (__cheat.speed) player.fx.speed_up = Math.max(player.fx.speed_up || 0, 2);
+  if (__cheat.rate) player.fx.rate_up = Math.max(player.fx.rate_up || 0, 2);
+  if (__cheat.dmg) player.fx.dmg_up = Math.max(player.fx.dmg_up || 0, 2);
+}, 80);
+
+</script>
+
+<button id="cheatToggle" type="button" title="Читы">⚡</button>
+<div id="cheatPanel">
+  <h3>⚡ CHEAT MENU</h3>
+  <div class="row">
+    <button id="chGod" type="button">God mode</button>
+    <button id="chInfHp" type="button">∞ HP</button>
+  </div>
+  <div class="row">
+    <button id="chInfGuns" type="button">∞ Стволы</button>
+    <button id="chMaxGuns" type="button" class="good">+Ствол</button>
+  </div>
+  <div class="row">
+    <button id="chSpeed" type="button">Скорость x2</button>
+    <button id="chRate" type="button">Огонь x3</button>
+  </div>
+  <div class="row">
+    <button id="chDmg" type="button">Урон x5</button>
+    <button id="chShield" type="button" class="good">Щит 60с</button>
+  </div>
+  <div class="row">
+    <button id="chHeal" type="button" class="good">Full HP</button>
+    <button id="chScore" type="button" class="good">+10k очков</button>
+  </div>
+  <div class="row">
+    <button id="chWave" type="button" class="good">След. волна</button>
+    <button id="chBoss" type="button" class="good">Спавн босс</button>
+  </div>
+  <div class="row">
+    <button id="chKill" type="button">Убить всех</button>
+    <button id="chClearEB" type="button">Очистить пули</button>
+  </div>
+  <div id="cheatStatus">Жми ⚡ · начни игру</div>
+</div>
+
+</body>
+</html>

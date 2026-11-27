@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin</title>
+<style>
+  body { margin: 0; padding: 16px; background: #0d1117; color: #eee; font-family: 'Courier New', monospace; }
+  h1 { font-size: 20px; color: #4ecdc4; margin: 0 0 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  input[type=password] { flex: 1; min-width: 180px; padding: 10px; font-size: 16px; font-family: inherit;
+    background: #16213e; color: #fff; border: 2px solid #4ecdc4; border-radius: 6px; }
+  button { padding: 10px 16px; font-size: 15px; font-family: inherit; font-weight: bold; cursor: pointer;
+    background: #4ecdc4; color: #0d1117; border: none; border-radius: 6px; }
+  button.secondary { background: #2a2a44; color: #eee; }
+  button.active { outline: 3px solid #ffd93d; }
+  #msg { min-height: 1.4em; margin-bottom: 8px; color: #ffd93d; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #2a2a44; white-space: nowrap; }
+  th { color: #4ecdc4; position: sticky; top: 0; background: #0d1117; }
+  tr:nth-child(1) td:first-child { color: #ffd700; font-weight: bold; }
+  tr:nth-child(2) td:first-child { color: #c0c0c0; font-weight: bold; }
+  tr:nth-child(3) td:first-child { color: #cd7f32; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Лидерборд (только для администратора)</h1>
+
+<div class="row">
+  <input id="pw" type="password" placeholder="Админ-пароль" autocomplete="off">
+  <button id="loadBtn">Показать</button>
+</div>
+<div class="row">
+  <button id="bestBtn" class="secondary active">Лучший результат каждого игрока</button>
+  <button id="allBtn" class="secondary">Все попытки (для проверки)</button>
+  <button id="csvBtn" class="secondary">Скачать CSV</button>
+</div>
+<div id="msg"></div>
+<div class="wrap">
+  <table id="tbl" style="display:none;">
+    <thead><tr><th>#</th><th>Имя</th><th>Счёт</th><th>Волна</th><th>Время (с)</th><th>Дата</th></tr></thead>
+    <tbody id="body"></tbody>
+  </table>
+</div>
+
+<script>
+// Те же значения, что и в игре (Supabase → Project Settings → API)
+const SUPABASE_URL = 'https://wydvpmrmsmhjwtwaafxe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v73ueWUwtzxivjLLONlTlA_iKlWfPhy';
+
+let showAll = false;
+let lastRows = [];
+
+function headers() {
+  const h = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+  if (SUPABASE_KEY.startsWith('eyJ')) h['Authorization'] = 'Bearer ' + SUPABASE_KEY;
+  return h;
+}
+
+async function load() {
+  const msg = document.getElementById('msg');
+  const pw = document.getElementById('pw').value;
+  if (!SUPABASE_URL.startsWith('https://') || SUPABASE_KEY.startsWith('PASTE')) {
+    msg.textContent = 'Сначала вставьте SUPABASE_URL и ключ в начале этого файла.';
+    return;
+  }
+  if (!pw) { msg.textContent = 'Введите пароль.'; return; }
+  msg.textContent = 'Загрузка...';
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_leaderboard', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ p_password: pw, p_all: showAll })
+    });
+    if (!res.ok) {
+      msg.textContent = (res.status === 400 || res.status === 403) ? 'Неверный пароль.' : 'Ошибка сервера: ' + res.status;
+      return;
+    }
+    lastRows = await res.json();
+    render();
+    msg.textContent = 'Записей: ' + lastRows.length;
+  } catch (e) {
+    msg.textContent = 'Не удалось подключиться. Проверьте интернет и настройки.';
+  }
+}
+
+function render() {
+  const body = document.getElementById('body');
+  body.textContent = '';
+  lastRows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const cells = [i + 1, r.name, r.score, r.wave, r.duration_sec, new Date(r.created_at).toLocaleString('ru-RU')];
+    cells.forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v;   // textContent: имена вводят игроки, так HTML не выполнится
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  document.getElementById('tbl').style.display = lastRows.length ? 'table' : 'none';
+}
+
+function setMode(all) {
+  showAll = all;
+  document.getElementById('bestBtn').classList.toggle('active', !all);
+  document.getElementById('allBtn').classList.toggle('active', all);
+  if (document.getElementById('pw').value) load();
+}
+
+function downloadCsv() {
+  if (!lastRows.length) return;
+  const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const lines = ['rank,name,score,wave,duration_sec,created_at'];
+  lastRows.forEach((r, i) => lines.push([i + 1, r.name, r.score, r.wave, r.duration_sec, r.created_at].map(esc).join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'leaderboard.csv';
+  a.click();
+}
+
+document.getElementById('loadBtn').addEventListener('click', load);
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') load(); });
+document.getElementById('bestBtn').addEventListener('click', () => setMode(false));
+document.getElementById('allBtn').addEventListener('click', () => setMode(true));
+document.getElementById('csvBtn').addEventListener('click', downloadCsv);
+</script>
+</body>
+</html>
